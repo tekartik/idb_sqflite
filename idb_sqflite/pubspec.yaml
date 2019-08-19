@@ -1,8 +1,8 @@
 name: idb_sqflite
-description: IndexedDB API for flutter
+description: IndexedDB API for flutter on top of sqflite
+homepage: https://github.com/tekartik/idb_sqflite
+author: Tekartik <alex@tekartik.com>
 version: 0.1.0
-author:
-homepage:
 
 environment:
   sdk: ">=2.4.0-dev.0 <3.0.0"
@@ -10,9 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  idb_shim: '>=1.8.1+2'
-  sqflite:
-  meta:
+  idb_shim: '>=1.8.1+2 <2.0.0'
+  sqflite: '>=1.1.6+3 <2.0.0'
+  meta: '>=1.1.5 <3.0.0'
 
 dev_dependencies:
   flutter_test:
