@@ -29,7 +29,7 @@ linter:
   - avoid_empty_else
   - avoid_slow_async_io
   - cancel_subscriptions
-  # - close_sinks # https://github.com/flutter/flutter/issues/5789
+  - close_sinks
   # - comment_references # blocked on https://github.com/dart-lang/dartdoc/issues/1153
   - control_flow_in_finally
   - empty_statements

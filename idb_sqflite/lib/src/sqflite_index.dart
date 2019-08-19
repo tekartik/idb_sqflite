@@ -177,36 +177,38 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
 
   Future insertKey(int primaryId, dynamic keyValue) async {
     await transaction.batch((batch) {
-      _insertKeyBatch(batch, primaryId, keyValue);
+      insertKeyBatch(batch, primaryId, keyValue);
     });
   }
 
-  void _insertKeyBatch(sqflite.Batch batch, int primaryId, dynamic keyValue) {
-    if (multiEntry) {
-      var keys = valueAsSet(keyValue);
-      if (keys?.isNotEmpty ?? false) {
-        for (var key in keys) {
-          key = encodeKey(key);
-          var map = <String, dynamic>{
-            primaryIdColumnName: primaryId,
-            keyColumnName: key
-          };
-          batch.insert(sqlIndexTableName, map);
-        }
-      }
-    } else {
-      var map = <String, dynamic>{primaryIdColumnName: primaryId};
-      if (isMultiKey) {
-        assert(keyValue is List && keyValue.length == multiKeyCount);
-        // Create index on each key plus one for all
-        for (int i = 0; i < multiKeyCount; i++) {
-          var keyColumnName = keyIndexToKeyName(i);
-          map[keyColumnName] = encodeKey((keyValue as List)[i]);
+  void insertKeyBatch(sqflite.Batch batch, int primaryId, dynamic keyValue) {
+    if (keyValue != null) {
+      if (multiEntry) {
+        var keys = valueAsSet(keyValue);
+        if (keys?.isNotEmpty ?? false) {
+          for (var key in keys) {
+            key = encodeKey(key);
+            var map = <String, dynamic>{
+              primaryIdColumnName: primaryId,
+              keyColumnName: key
+            };
+            batch.insert(sqlIndexTableName, map);
+          }
         }
       } else {
-        map[keyColumnName] = encodeKey(keyValue);
+        var map = <String, dynamic>{primaryIdColumnName: primaryId};
+        if (isMultiKey) {
+          assert(keyValue is List && keyValue.length == multiKeyCount);
+          // Create index on each key plus one for all
+          for (int i = 0; i < multiKeyCount; i++) {
+            var keyColumnName = keyIndexToKeyName(i);
+            map[keyColumnName] = encodeKey((keyValue as List)[i]);
+          }
+        } else {
+          map[keyColumnName] = encodeKey(keyValue);
+        }
+        batch.insert(sqlIndexTableName, map);
       }
-      batch.insert(sqlIndexTableName, map);
     }
   }
 
@@ -214,7 +216,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
     await transaction.batch((batch) {
       batch.delete(sqlIndexTableName,
           where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
-      _insertKeyBatch(batch, primaryId, keyValue);
+      insertKeyBatch(batch, primaryId, keyValue);
     });
   }
 

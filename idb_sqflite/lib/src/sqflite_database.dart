@@ -5,12 +5,14 @@ import 'dart:convert';
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_shim/src/common/common_database.dart';
 import 'package:idb_shim/src/common/common_meta.dart';
+import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/core_imports.dart';
 import 'package:idb_sqflite/src/sqflite_constant.dart';
 import 'package:idb_sqflite/src/sqflite_factory.dart';
 import 'package:idb_sqflite/src/sqflite_index.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
+import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:sqflite/sqlite_api.dart' as sqflite;
 
 String sanitizeDbName(String name) => name;
@@ -76,6 +78,29 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
         for (IdbIndexMeta indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
           await index.create();
+
+          // if store was not created update the keys
+          if (!txnMeta.createdStores
+              .map((store) => store.name)
+              .contains(storeName)) {
+            var rows = await store.transaction.query(store.sqlTableName,
+                columns: [
+                  '$sqliteRowId as $primaryIdColumnName',
+                  valueColumnName
+                ]);
+            if (rows.isNotEmpty) {
+              await versionChangeTransaction.batch((batch) {
+                for (var row in rows) {
+                  var value = decodeValue(row[valueColumnName]);
+                  if (value is Map) {
+                    var keyValue = mapValueAtKeyPath(value, index.keyPath);
+                    index.insertKeyBatch(
+                        batch, (row[primaryIdColumnName]) as int, keyValue);
+                  }
+                }
+              });
+            }
+          }
         }
       }
     }
@@ -302,6 +327,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   void close() {
     sqlDb?.close();
     sqlDb = null;
+    onVersionChangeCtlr?.close();
   }
 
   // Only created when we asked for it

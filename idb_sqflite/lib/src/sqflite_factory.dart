@@ -6,8 +6,10 @@ import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_global_store.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 
+/// idb_sqflite factory name
 const String idbFactoryNameSqflite = 'sqflite';
 
+/// idb_sqflite factory class
 class IdbFactorySqflite extends IdbFactoryBase {
   IdbFactorySqflite(this.sqfliteDatabaseFactory);
 

@@ -150,7 +150,9 @@ class IdbObjectStoreSqflite
     for (var index in _indecies) {
       if (value is Map) {
         var keyValue = mapValueAtKeyPath(value, index.keyPath);
-        await index.insertKey(insertId, keyValue);
+        if (keyValue != null) {
+          await index.insertKey(insertId, keyValue);
+        }
       }
     }
 
