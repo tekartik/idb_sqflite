@@ -2,7 +2,7 @@ name: idb_sqflite
 description: IndexedDB API for flutter on top of sqflite
 homepage: https://github.com/tekartik/idb_sqflite
 author: Tekartik <alex@tekartik.com>
-version: 0.1.0
+version: 0.1.0+1
 
 environment:
   sdk: ">=2.4.0-dev.0 <3.0.0"
