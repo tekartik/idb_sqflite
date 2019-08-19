@@ -1,0 +1,93 @@
+// ignore_for_file: implementation_imports
+import 'package:idb_shim/idb.dart';
+import 'package:idb_shim/src/common/common_factory.dart';
+import 'package:idb_shim/src/common/common_value.dart';
+import 'package:idb_sqflite/src/sqflite_database.dart';
+import 'package:idb_sqflite/src/sqflite_global_store.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
+
+const String idbFactoryNameSqflite = 'sqflite';
+
+class IdbFactorySqflite extends IdbFactoryBase {
+  IdbFactorySqflite(this.sqfliteDatabaseFactory);
+
+  final sqflite.DatabaseFactory sqfliteDatabaseFactory;
+  @override
+  bool get persistent => true;
+
+  // global store
+  SqfliteGlobalStore _globalStore;
+  SqfliteGlobalStore get globalStore =>
+      _globalStore ??= SqfliteGlobalStore(sqfliteDatabaseFactory);
+
+  @override
+  String get name => idbFactoryNameSqflite;
+
+  set globalStoreDbName(String dbName) {
+    globalStore.dbName = dbName;
+  }
+
+  @override
+  Future<Database> open(String dbName,
+      {int version,
+      OnUpgradeNeededFunction onUpgradeNeeded,
+      OnBlockedFunction onBlocked}) async {
+    checkOpenArguments(version: version, onUpgradeNeeded: onUpgradeNeeded);
+    version ??= 1;
+    if (dbName == null) {
+      throw ArgumentError('dbName cannot be null');
+    }
+
+    bool added = false;
+    try {
+      added = await globalStore.addDatabaseName(dbName);
+      var database = IdbDatabaseSqflite(this, dbName);
+      await database.open(version, onUpgradeNeeded);
+      return database;
+    } catch (e) {
+      if (added) {
+        await globalStore.deleteDatabaseName(dbName);
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<IdbFactory> deleteDatabase(String dbName,
+      {OnBlockedFunction onBlocked}) async {
+    var path = sanitizeDbName(dbName);
+    await sqfliteDatabaseFactory.deleteDatabase(path);
+    await globalStore.deleteDatabaseName(dbName);
+    return this;
+    /*
+    if (dbName == null) {
+      return new Future.error(new ArgumentError('dbName cannot be null'));
+    }
+    // remove the db name and add it back if it fails
+    return _globalStore.deleteDatabaseName(dbName).then((_) {
+      _WebSqlDatabase database = new _WebSqlDatabase(dbName);
+      return database._delete().then((_) {
+        return this;
+      }, onError: (e) {
+        _globalStore.addDatabaseName(dbName);
+        throw e;
+      });
+    });
+     */
+  }
+
+  @override
+  bool get supportsDatabaseNames {
+    return true;
+  }
+
+  @override
+  Future<List<String>> getDatabaseNames() => globalStore.getDatabaseNames();
+
+  // common implementation
+  @override
+  int cmp(Object first, Object second) => compareKeys(first, second);
+
+  @override
+  bool get supportsDoubleKey => false;
+}
