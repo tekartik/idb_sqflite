@@ -1,11 +1,13 @@
 import 'package:idb_sqflite/idb_sqflite.dart';
 
 Future main() async {
+  // The sqflite base factory
+
   var factory = idbFactorySqflite;
   // define the store name
   const String storeName = "records";
 
-// open the database
+  // open the database
   Database db = await factory.open("my_records.db", version: 1,
       onUpgradeNeeded: (VersionChangeEvent event) {
     Database db = event.database;

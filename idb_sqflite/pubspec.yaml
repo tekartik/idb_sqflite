@@ -1,6 +1,6 @@
 name: idb_sqflite
-description: Indexed db for flutter
-version: 0.0.1
+description: IndexedDB API for flutter
+version: 0.1.0
 author:
 homepage:
 
