@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:path/path.dart';
 
 Future main() async {
-  var src = '../../tekartik/idb_shim.dart/idb_shim/test';
-  var dst = 'test_idb_shim';
+  var src = '../../idb_shim.dart/idb_shim/test';
+  var dst = 'test_common/idb_shim';
 
   Future copy(String file) async {
     var dstFile = join(dst, file);
@@ -28,7 +28,9 @@ Future main() async {
 
   //
 
-  await Directory(dst).delete(recursive: true);
+  if (Directory(dst).existsSync()) {
+    await Directory(dst).delete(recursive: true);
+  }
   print(list);
   await copyAll([
     ...list,

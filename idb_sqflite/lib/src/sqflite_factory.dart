@@ -59,21 +59,6 @@ class IdbFactorySqflite extends IdbFactoryBase {
     await sqfliteDatabaseFactory.deleteDatabase(path);
     await globalStore.deleteDatabaseName(dbName);
     return this;
-    /*
-    if (dbName == null) {
-      return new Future.error(new ArgumentError('dbName cannot be null'));
-    }
-    // remove the db name and add it back if it fails
-    return _globalStore.deleteDatabaseName(dbName).then((_) {
-      _WebSqlDatabase database = new _WebSqlDatabase(dbName);
-      return database._delete().then((_) {
-        return this;
-      }, onError: (e) {
-        _globalStore.addDatabaseName(dbName);
-        throw e;
-      });
-    });
-     */
   }
 
   @override

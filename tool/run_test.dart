@@ -4,14 +4,15 @@ import 'package:process_run/shell.dart';
 Future main() async {
   var shell = Shell();
 
-  shell = shell.pushd('sqflite');
+  shell = shell.pushd('idb_sqflite');
   await shell.run('''
     
     flutter test
     
         ''');
 
-  shell = shell.pushd('example');
+  shell = shell.popd();
+  shell = shell.pushd('idb_sqflite_test');
   await shell.run('''
     
     flutter packages get

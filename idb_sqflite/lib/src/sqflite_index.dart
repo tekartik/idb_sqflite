@@ -55,6 +55,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
           // key BLOB or key1 BLOB, key2 BLOB...
           '${keyColumnNames.map((name) => '$name BLOB').join(', ')}, '
           '$primaryIdColumnName BLOB)');
+      // 'FOREIGN KEY ($primaryIdColumnName) REFERENCES $sqlStoreTableName($sqliteRowId) ON DELETE CASCADE)');
 
       batch.execute(
           'CREATE VIEW $sqlIndexViewName AS SELECT ${keyColumnNames.join(', ')}, $primaryKeyColumnName, $valueColumnName '
@@ -109,20 +110,6 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   Future get(key) {
     checkKeyParam(key);
     return _checkIndex(() async {
-      /*if (multiEntry) {
-        var rows = await transaction.query(
-            '$sqlStoreTableName, $multiEntryTableName',
-            columns: ['$sqlStoreTableName.${valueColumnName}'],
-            where:
-                '$multiEntryTableName.$multiEntryKeyColumnName = ? AND ${multiEntryJoinWhere}',
-            whereArgs: [encodeKey(key)],
-            limit: 1);
-        if (rows.length == 0) {
-          return null;
-        }
-        return decodeValue(rows.first[valueColumnName]);
-      } else*/
-
       var row = await getFirstRow(key, columns: [valueColumnName]);
       if (row == null) {
         return null;
@@ -228,6 +215,13 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
       batch.delete(sqlIndexTableName,
           where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
       _insertKeyBatch(batch, primaryId, keyValue);
+    });
+  }
+
+  Future deleteKey(int primaryId) async {
+    await transaction.batch((batch) {
+      batch.delete(sqlIndexTableName,
+          where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
     });
   }
 }

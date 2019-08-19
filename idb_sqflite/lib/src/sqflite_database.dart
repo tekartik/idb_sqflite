@@ -13,7 +13,6 @@ import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:sqflite/sqlite_api.dart' as sqflite;
 
-//@TODO
 String sanitizeDbName(String name) => name;
 
 class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
@@ -49,24 +48,6 @@ class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
   }
 }
 
-/*
-
-class _WebSqlVersionChangeEvent extends VersionChangeEvent {
-  int oldVersion;
-  int newVersion;
-  Request request;
-  Object get target => request;
-  Database get database => transaction.database;
-  Transaction get transaction => request.transaction;
-
-  _WebSqlVersionChangeEvent(_WebSqlDatabase database, this.oldVersion,
-      this.newVersion, Transaction transaction) {
-    // special transaction
-    //WebSqlTransaction versionChangeTransaction = new WebSqlTransaction(database, tx, null, MODE_READ_WRITE);
-    request = new OpenDBRequest(database, transaction);
-  }
-}
-*/
 class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   IdbDatabaseSqflite(IdbFactory factory, String name) : super(factory) {
     meta.name = name;
@@ -81,98 +62,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   IdbDatabaseMeta meta = IdbDatabaseMeta();
 
   sqflite.Database sqlDb;
-  /*
-  // To allow for proper schema migration if needed
 
-  // V1 include the following schema
-  // CREATE TABLE version (internal_version INT, value INT, signature TEXT)
-  // INSERT INTO version (internal_version, value, signature) VALUES (1, 0, com.tekartik.idb)
-  // CREATE TABLE stores (name TEXT UNIQUE, key_path TEXT, auto_increment BOOLEAN, indecies TEXT)
-  static const int INTERNAL_VERSION_1 = 1;
-  // CREATE TABLE stores (name TEXT UNIQUE, meta TEXT)
-  static const int INTERNAL_VERSION_2 = 2;
-  static const int INTERNAL_VERSION = INTERNAL_VERSION_2;
-
-  //int version = 0;
-  //bool opened = true;
-
-  _WebSqlDatabase(String name) : super(idbWebSqlFactory) {
-    meta.name = name;
-  }
-  _WebSqlTransaction versionChangeTransaction;
-  SqlDatabase sqlDb;
-
-
-  final IdbDatabaseMeta meta = new IdbDatabaseMeta();
-
-  int _getVersionFromResultSet(SqlResultSet resultSet) {
-    if (resultSet.rows.length > 0) {
-      return resultSet.rows[0]['value'];
-    }
-    return 0;
-  }
-
-  */
-
-  /*
-  Future _delete() {
-    List<String> tableNamesFromResultSet(SqlResultSet rs) {
-      List<String> names = [];
-      rs.rows.forEach((row) {
-        names.add(_WebSqlObjectStore.getSqlTableName(row['name']));
-      });
-      return names;
-    }
-
-    Future deleteStores(SqlTransaction tx) {
-      // delete all stores
-      // this exists since v1
-      var sqlSelect = "SELECT name FROM stores";
-      return tx.execute(sqlSelect).then((SqlResultSet rs) {
-        List<String> names = tableNamesFromResultSet(rs);
-        return tx.dropTablesIfExists(names);
-      });
-    }
-
-    // delete all tables
-    SqlDatabase sqlDb = _openSqlDb(name);
-    return sqlDb.transaction().then((tx) {
-      return tx.execute("SELECT internal_version, signature FROM version").then(
-          (rs) {
-        String signature = getSignatureFromResultSet(rs);
-        int internalVersion = getInternalVersionFromResultSet(rs);
-        // Stores table is valid since the first version
-        if ((signature == INTERNAL_SIGNATURE) &&
-            (internalVersion >= INTERNAL_VERSION_1)) {
-          // delete all the object store table
-          return deleteStores(tx).then((_) {
-            // then the system tables
-            return tx.dropTableIfExists("version").then((_) {
-              return tx.dropTableIfExists("stores");
-            });
-          });
-        }
-      }, onError: (e) {
-        // No such version table
-        // assume everything is fine
-        // don't create anyting
-      });
-    });
-  }
-
-  // This is set on object store create and index create
-  Future initialization = new Future.value();
-
-  // very ugly
-  // basically some init function are not async, this is a hack to group action here...
-  Future initBlock(Future computation()) {
-    //var saved = initialization;
-    initialization = initialization.then((_) {
-      return computation();
-    });
-    return initialization;
-  }
-  */
   Future _upgrade(IdbTransactionSqflite tx, int oldVersion, int newVersion,
       void onUpgradeNeeded(VersionChangeEvent event)) async {
     final txnMeta = tx.meta
@@ -277,6 +167,9 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       return sqfliteDatabaseFactory.openDatabase(path,
           options: sqflite.OpenDatabaseOptions(
               version: internalVersion,
+              onConfigure: (db) async {
+                await db.execute('PRAGMA foreign_keys = ON');
+              },
               onCreate: (db, _) async {
                 await _initDatabase(db);
               },

@@ -113,19 +113,6 @@ abstract class _IdbCommonCursorSqflite<T extends Cursor> {
   String toString() => '$key $primaryKey';
 }
 
-/*
-class _IdbIndexCursorWithValueSqflite extends _IdbCursorWithValueSqflite {
-  @override
-  final Object key;
-  @override
-  final Object primaryKey;
-  _IdbIndexCursorWithValueSqflite(
-      _IdbCursorWithValueBaseControllerSqflite ctlr, Map map,
-      {@required this.key, @required this.primaryKey})
-      : super(ctlr, map);
-}
- */
-
 class _IdbCursorSqflite extends Cursor with _IdbCommonCursorSqflite<Cursor> {
   _IdbCursorSqflite(_IdbKeyCursorBaseControllerSqflite ctlr,
       IdbRecordSnapshotSqflite snapshot) {

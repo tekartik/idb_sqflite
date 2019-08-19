@@ -290,9 +290,16 @@ class IdbObjectStoreSqflite
     });
   }
 
-  Future deleteImpl(key) {
+  Future deleteImpl(key) async {
     var sqlArgs = [encodeKey(key)];
-    return transaction.delete(sqlTableName,
+    // remove the index value
+    int primaryId;
+    for (var index in _indecies) {
+      primaryId ??= await getPrimaryId(key);
+      await index.deleteKey(primaryId);
+    }
+
+    await transaction.delete(sqlTableName,
         where: '$primaryKeyColumnName = ?', whereArgs: sqlArgs);
   }
 
