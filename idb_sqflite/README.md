@@ -23,13 +23,13 @@ Future main() async {
   });
 
   // put some data
-  var txn = db.transaction(storeName, "readwrite");
+  var txn = db.transaction(storeName, idbModeReadWrite);
   var store = txn.objectStore(storeName);
   var key = await store.put({"some": "data"});
   await txn.completed;
 
   // read some data
-  txn = db.transaction(storeName, "readonly");
+  txn = db.transaction(storeName, idbModeReadOnly);
   store = txn.objectStore(storeName);
   var value = await store.getObject(key);
 
@@ -39,3 +39,7 @@ Future main() async {
 ```
 
 See [idb_shim](https://github.com/tekartik/idb_shim.dart) for API usage
+
+## Example
+
+Simple notepad available [here](https://github.com/alextekartik/flutter_app_example/tree/master/notepad)
