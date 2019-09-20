@@ -1,6 +1,15 @@
 # idb_sqflite
 
-Indexed db for flutter on top of sqflite
+Indexed DB for flutter on top of sqflite.
+
+* Supports both iOS and Android
+* Supports Flutter Web through idb_shim.
+* Supports Dart VM (Desktop) through idb_shim
+
+## Example
+
+Simple notepad available [here](https://github.com/alextekartik/flutter_app_example/tree/master/notepad) running on
+Flutter (iOS/Android/Web).
 
 ## Getting Started
 
@@ -38,8 +47,6 @@ Future main() async {
 }
 ```
 
-See [idb_shim](https://github.com/tekartik/idb_shim.dart) for API usage
+See [idb_shim](https://github.com/tekartik/idb_shim.dart) for API usage or more generally the 
+[W3C reference](https://www.w3.org/TR/IndexedDB-2/) 
 
-## Example
-
-Simple notepad available [here](https://github.com/alextekartik/flutter_app_example/tree/master/notepad)
