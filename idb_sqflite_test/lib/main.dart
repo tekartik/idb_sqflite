@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:idb_sqflite/idb_sqflite.dart';
+// Use idb_sqflite on mobile, idb_native on the web
+import 'io/idb_io.dart' if (dart.library.html) 'web/idb_web.dart';
 
 void main() {
   var bloc = MyAppBloc();
@@ -25,8 +26,8 @@ class MyAppBloc {
     }();
   }
   Future<Database> database = () async {
-    var db = await idbFactorySqflite.open('counter.db', version: 1,
-        onUpgradeNeeded: (e) {
+    var db =
+        await idbFactory.open('counter.db', version: 1, onUpgradeNeeded: (e) {
       var db = e.database;
       db.createObjectStore(storeName);
     });
