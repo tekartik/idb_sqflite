@@ -250,7 +250,6 @@ mixin _IdbCursorWithValueCommonControllerSqflite
 abstract class _IdbControllerSqflite {
   int get currentIndex;
   set currentIndex(int currentIndex);
-  List<IdbRecordSnapshotSqflite> get _rows;
   set _rows(List<IdbRecordSnapshotSqflite> _rows);
   void _autoNext();
 }
