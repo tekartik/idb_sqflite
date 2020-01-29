@@ -5,7 +5,8 @@ dart:
   - stable
   - dev
 before_script:
-  - pub run tekartik_travis_ci_flutter:install
+  - cd idb_sqflite_support/
+  - ./before_travis.sh
   - source $(pub run tekartik_travis_ci_flutter:env)
 script:
   - idb_sqflite_support/root_travis.sh
