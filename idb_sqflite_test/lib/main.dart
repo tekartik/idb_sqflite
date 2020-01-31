@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-// Use idb_sqflite on mobile, idb_native on the web
+
 import 'io/idb_io.dart' if (dart.library.html) 'web/idb_web.dart';
 
 void main() {
@@ -25,6 +25,7 @@ class MyAppBloc {
       _counterController.add(_value);
     }();
   }
+
   Future<Database> database = () async {
     var db =
         await idbFactory.open('counter.db', version: 1, onUpgradeNeeded: (e) {
@@ -36,7 +37,9 @@ class MyAppBloc {
 
   int _value;
   final _counterController = StreamController<int>.broadcast();
+
   Stream<int> get counter => _counterController.stream;
+
   Future increment() async {
     _value++;
     var db = await database;
@@ -51,6 +54,7 @@ class MyApp extends StatelessWidget {
   final MyAppBloc bloc;
 
   const MyApp({Key key, @required this.bloc}) : super(key: key);
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -78,6 +82,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   final MyAppBloc bloc;
+
   MyHomePage({Key key, this.title, @required this.bloc}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
@@ -116,7 +121,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     'You have pushed the button this many times:',
                   ),
                   if (count != null)
-                    Text('$count', style: Theme.of(context).textTheme.display1)
+                    Text('$count', style: Theme.of(context).textTheme.headline)
                 ],
               ),
             ),
