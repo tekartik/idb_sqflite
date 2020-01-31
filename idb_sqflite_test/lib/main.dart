@@ -121,9 +121,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     'You have pushed the button this many times:',
                   ),
                   if (count != null)
-                    Text('$count', style:
-                    // ignore: deprecated_member_use
-                    Theme.of(context).textTheme.display1)
+                    Text('$count',
+                        style:
+                            // ignore: deprecated_member_use
+                            Theme.of(context).textTheme.display1)
                 ],
               ),
             ),
