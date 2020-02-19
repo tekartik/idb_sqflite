@@ -155,6 +155,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
       {key, KeyRange range, String direction, bool autoAdvance}) {
     var ctlr = IdbIndexKeyCursorControllerSqflite(this, direction, autoAdvance);
 
+    checkOpenCursorArguments(key, range);
     // Future
     _checkIndex(() {
       return ctlr.execute(key, range);
@@ -167,6 +168,8 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
       {key, KeyRange range, String direction, bool autoAdvance}) {
     var ctlr =
         IdbIndexCursorWithValueControllerSqflite(this, direction, autoAdvance);
+
+    checkOpenCursorArguments(key, range);
 
     // Future
     _checkIndex(() {

@@ -8,6 +8,7 @@ import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_constant.dart';
 import 'package:idb_sqflite/src/sqflite_cursor.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
+import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:idb_sqflite/src/sqflite_index.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
@@ -161,19 +162,19 @@ class IdbObjectStoreSqflite
 
   @override
   Future add(dynamic value, [dynamic key]) {
-    return _checkWritableStore(() {
-      checkKeyValueParam(
-          keyPath: keyPath,
-          key: key,
-          value: value,
-          autoIncrement: autoIncrement);
+    return _checkWritableStore(() => catchAsyncSqfliteError(() {
+          checkKeyValueParam(
+              keyPath: keyPath,
+              key: key,
+              value: value,
+              autoIncrement: autoIncrement);
 
-      if (key == null && keyPath != null && value is Map) {
-        key = mapValueAtKeyPath(value, keyPath);
-      }
+          if (key == null && keyPath != null && value is Map) {
+            key = mapValueAtKeyPath(value, keyPath);
+          }
 
-      return addImpl(value, key);
-    });
+          return addImpl(value, key);
+        }));
   }
 
   Future putImpl(dynamic value, [dynamic key]) async {
@@ -205,18 +206,18 @@ class IdbObjectStoreSqflite
 
   @override
   Future put(dynamic value, [dynamic key]) {
-    return _checkWritableStore(() {
-      checkKeyValueParam(
-          keyPath: keyPath,
-          key: key,
-          value: value,
-          autoIncrement: autoIncrement);
+    return _checkWritableStore(() => catchAsyncSqfliteError(() {
+          checkKeyValueParam(
+              keyPath: keyPath,
+              key: key,
+              value: value,
+              autoIncrement: autoIncrement);
 
-      if (key == null && keyPath != null && value is Map) {
-        key = mapValueAtKeyPath(value, keyPath);
-      }
-      return putImpl(value, key);
-    });
+          if (key == null && keyPath != null && value is Map) {
+            key = mapValueAtKeyPath(value, keyPath);
+          }
+          return putImpl(value, key);
+        }));
   }
 
   dynamic valueRowToRecord(dynamic pk, dynamic row) {
@@ -330,6 +331,8 @@ class IdbObjectStoreSqflite
     var ctlr =
         IdbCursorWithValueControllerSqflite(this, direction, autoAdvance);
 
+    checkOpenCursorArguments(key, range);
+
     // Future
     checkStore(() {
       return ctlr.execute(key, range);
@@ -341,6 +344,8 @@ class IdbObjectStoreSqflite
   Stream<Cursor> openKeyCursor(
       {key, KeyRange range, String direction, bool autoAdvance}) {
     var ctlr = IdbKeyCursorControllerSqflite(this, direction, autoAdvance);
+
+    checkOpenCursorArguments(key, range);
 
     // Future
     checkStore(() {

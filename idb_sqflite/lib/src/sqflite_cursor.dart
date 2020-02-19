@@ -137,6 +137,14 @@ class _IdbCursorWithValueSqflite extends CursorWithValue
   String toString() => '$key $primaryKey $value';
 }
 
+/// Check open cursor arguments
+void checkOpenCursorArguments(dynamic key, KeyRange range) {
+  if (key is KeyRange) {
+    throw ArgumentError(
+        'Invalid keyRange $key as key argument, use the range argument');
+  }
+}
+
 abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
     implements _IdbControllerSqflite {
   _IdbCursorBaseControllerSqflite(this.direction, this.autoAdvance) {

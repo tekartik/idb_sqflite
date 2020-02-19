@@ -27,42 +27,29 @@ class IdbDatabaseErrorSqflite extends DatabaseError {
     return _nativeError.toString();
   }
 }
-/*
-part of idb_shim_websql;
 
-class _IdbWebSqlError extends DatabaseError {
-  int errorCode;
-
-  static final int MISSING_KEY = 3;
-
-  _IdbWebSqlError(this.errorCode, String message) : super(message);
-
-  String toString() {
-    String text = "IdbWebSqlError(${errorCode})";
-    if (message != null) {
-      text += ": $message";
-    }
-    return text;
+bool _handleError(dynamic e) {
+  if (e is DatabaseError) {
+    return false;
+  } else if (e is DatabaseException) {
+    return false;
+  } else {
+    throw DatabaseError(e.toString());
   }
 }
 
-class _WebSqlDatabaseError extends DatabaseError {
-  dynamic _nativeError;
-
-  int get code {
-    if (_nativeError is SqlError) {
-      return _nativeError.code;
+//
+// We no longer catch the native exception asynchronously
+// as it makes the stack trace lost...
+//
+Future<T> catchAsyncSqfliteError<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } catch (e) {
+    if (!_handleError(e)) {
+      rethrow;
     }
-    return 0;
-  }
-
-  _WebSqlDatabaseError(this._nativeError) : super(null);
-
-  String get message {
-    if (_nativeError is SqlError) {
-      return _nativeError.message;
-    }
-    return _nativeError.toString();
+    // We should never get there
+    return null;
   }
 }
-*/
