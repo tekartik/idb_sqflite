@@ -17,7 +17,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   process_run: '>=0.10.3'
-  pedantic:
+  pedantic: '>=1.8.0'
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
