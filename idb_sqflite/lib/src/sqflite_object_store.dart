@@ -41,7 +41,7 @@ class IdbObjectStoreSqflite
     if (keyPath == null) {
       return keyDefaultColumnName;
     } else {
-      return "_col_${wrapKeyPath(keyPath)}";
+      return '_col_${wrapKeyPath(keyPath)}';
     }
   }
 
@@ -50,7 +50,7 @@ class IdbObjectStoreSqflite
   }
 
   static String getSqlTableName(String storeName) {
-    return "s__$storeName";
+    return 's__$storeName';
   }
 
   Future deleteTable(IdbTransactionSqflite transaction) {
@@ -64,20 +64,20 @@ class IdbObjectStoreSqflite
   }
 
   Future update() async {
-    String metaText = jsonEncode(meta.toMap());
+    var metaText = jsonEncode(meta.toMap());
     await transaction.update(storesTable, {metaField: metaText},
         where: '$nameField = ?', whereArgs: [name]);
   }
 
   // create
   Future create() async {
-    String createSql = "CREATE TABLE $sqlTableName ($primaryKeyColumnName " +
+    var createSql = 'CREATE TABLE $sqlTableName ($primaryKeyColumnName ' +
         (autoIncrement
-            ? "INTEGER PRIMARY KEY AUTOINCREMENT"
-            : "BLOB PRIMARY KEY") +
-        ", $valueColumnName BLOB)";
+            ? 'INTEGER PRIMARY KEY AUTOINCREMENT'
+            : 'BLOB PRIMARY KEY') +
+        ', $valueColumnName BLOB)';
 
-    String metaText = jsonEncode(meta.toMap());
+    var metaText = jsonEncode(meta.toMap());
 
     var txn = transaction;
     await txn.execute('DROP TABLE IF EXISTS $sqlTableName');
@@ -86,7 +86,7 @@ class IdbObjectStoreSqflite
         storesTable, <String, dynamic>{nameField: name, metaField: metaText});
   }
 
-  Future _checkWritableStore(Future computation()) {
+  Future _checkWritableStore(Future Function() computation) {
     if (transaction.meta.mode != idbModeReadWrite) {
       return Future.error(DatabaseReadOnlyError());
     }
@@ -94,7 +94,7 @@ class IdbObjectStoreSqflite
   }
 
   IdbIndexSqflite _getIndex(String name) {
-    IdbIndexMeta indexMeta = meta.index(name);
+    var indexMeta = meta.index(name);
     if (indexMeta != null) {
       return IdbIndexSqflite(this, indexMeta);
     }
@@ -102,33 +102,32 @@ class IdbObjectStoreSqflite
   }
 
   // Don't make it async as it must run before completed is called
-  Future<T> checkStore<T>(Future<T> computation()) {
+  Future<T> checkStore<T>(Future<T> Function() computation) {
     // this is also an indicator
     //if (!ready) {
-    if (_lazyPrepare == null) {
-      // Make sure the db was not upgrade
-      // TODO do this at the beginning of each transaction
+    // Make sure the db was not upgrade
+    // TODO do this at the beginning of each transaction
 
-      _lazyPrepare = transaction
-          .query(versionTable,
-              columns: [versionField],
-              where: '$versionField > ?',
-              whereArgs: [database.version])
-          .then((list) async {
-        if (list.isNotEmpty) {
-          // Send an onVersionChange event
-          //Map map = rs.rows.first; - BUG dart, first is null:
-          Map map = list.first;
-          int newVersion = map[versionField] as int;
-          if (database.onVersionChangeCtlr != null) {
-            database.onVersionChangeCtlr.add(IdbVersionChangeEventSqflite(
-                database, database.version, newVersion));
-          }
-          throw StateError(
-              "database upgraded from ${database.version} to $newVersion");
+    _lazyPrepare ??= transaction
+        .query(versionTable,
+            columns: [versionField],
+            where: '$versionField > ?',
+            whereArgs: [database.version])
+        .then((list) async {
+      if (list.isNotEmpty) {
+        // Send an onVersionChange event
+        //Map map = rs.rows.first; - BUG dart, first is null:
+        Map map = list.first;
+        var newVersion = map[versionField] as int;
+        if (database.onVersionChangeCtlr != null) {
+          database.onVersionChangeCtlr.add(IdbVersionChangeEventSqflite(
+              database, database.version, newVersion));
         }
-      });
-    }
+        throw StateError(
+            'database upgraded from ${database.version} to $newVersion');
+      }
+    });
+
     return _lazyPrepare.then((_) {
       return computation();
     });
@@ -313,7 +312,7 @@ class IdbObjectStoreSqflite
 
   @override
   Index createIndex(String name, keyPath, {bool unique, bool multiEntry}) {
-    IdbIndexMeta indexMeta = IdbIndexMeta(name, keyPath, unique, multiEntry);
+    var indexMeta = IdbIndexMeta(name, keyPath, unique, multiEntry);
     meta.createIndex(database.meta, indexMeta);
     var index = IdbIndexSqflite(this, indexMeta);
     // let it for later

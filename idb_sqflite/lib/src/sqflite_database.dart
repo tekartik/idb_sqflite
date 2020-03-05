@@ -20,10 +20,10 @@ String sanitizeDbName(String name) => name;
 class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
   IdbVersionChangeEventSqflite(
       IdbDatabaseSqflite database, int oldVersion, this.newVersion) //
-      : oldVersion = oldVersion == null ? 0 : oldVersion {
+      : oldVersion = oldVersion ?? 0 {
     // handle = too to catch programatical errors
     if (this.oldVersion >= newVersion) {
-      throw StateError("cannot downgrade from $oldVersion to $newVersion");
+      throw StateError('cannot downgrade from $oldVersion to $newVersion');
     }
     request = OpenDBRequest(database, database.versionChangeTransaction);
   }
@@ -46,7 +46,7 @@ class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
 
   @override
   String toString() {
-    return "$oldVersion => $newVersion";
+    return '$oldVersion => $newVersion';
   }
 }
 
@@ -66,16 +66,16 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   sqflite.Database sqlDb;
 
   Future _upgrade(IdbTransactionSqflite tx, int oldVersion, int newVersion,
-      void onUpgradeNeeded(VersionChangeEvent event)) async {
+      void Function(VersionChangeEvent event) onUpgradeNeeded) async {
     final txnMeta = tx.meta
         as IdbVersionChangeTransactionMeta; // .versionChangeTransaction;
 
     Future createIndecies() async {
-      for (String storeName in txnMeta.createdIndexes.keys) {
+      for (var storeName in txnMeta.createdIndexes.keys) {
         var store = versionChangeTransaction.objectStore(storeName)
             as IdbObjectStoreSqflite;
-        List<IdbIndexMeta> indexMetas = txnMeta.createdIndexes[storeName];
-        for (IdbIndexMeta indexMeta in indexMetas) {
+        var indexMetas = txnMeta.createdIndexes[storeName];
+        for (var indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
           await index.create();
 
@@ -106,11 +106,11 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     }
 
     Future removeDeletedIndecies() async {
-      for (String storeName in txnMeta.deletedIndexes.keys) {
+      for (var storeName in txnMeta.deletedIndexes.keys) {
         var store = versionChangeTransaction.objectStore(storeName)
             as IdbObjectStoreSqflite;
-        List<IdbIndexMeta> indexMetas = txnMeta.deletedIndexes[storeName];
-        for (IdbIndexMeta indexMeta in indexMetas) {
+        var indexMetas = txnMeta.deletedIndexes[storeName];
+        for (var indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
           await versionChangeTransaction.batch(index.drop);
         }
@@ -118,24 +118,24 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     }
 
     Future createObjectStores() async {
-      for (IdbObjectStoreMeta storeMeta in txnMeta.createdStores) {
+      for (var storeMeta in txnMeta.createdStores) {
         var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
         await store.create();
       }
     }
 
     Future updateObjectStores() async {
-      for (IdbObjectStoreMeta storeMeta in txnMeta.updatedStores) {
+      for (var storeMeta in txnMeta.updatedStores) {
         var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
         await store.update();
       }
     }
 
     Future removeDeletedObjectStores() async {
-      for (IdbObjectStoreMeta storeMeta in txnMeta.deletedStores) {
+      for (var storeMeta in txnMeta.deletedStores) {
         var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
         await store.deleteTable(versionChangeTransaction);
-        var sqlDelete = "DELETE FROM $storesTable WHERE name = ?";
+        var sqlDelete = 'DELETE FROM $storesTable WHERE name = ?';
         var sqlArgs = [store.name];
         await versionChangeTransaction.execute(sqlDelete, sqlArgs);
       }
@@ -174,17 +174,17 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       /// Init the database
       /// Set oldVersion to 0
       Future _initDatabase(sqflite.Database db) async {
-        await db.execute("DROP TABLE IF EXISTS $versionTable"); //
+        await db.execute('DROP TABLE IF EXISTS $versionTable'); //
 
         await db.execute(
-            "CREATE TABLE $versionTable ($versionField INT, $signatureField TEXT)");
+            'CREATE TABLE $versionTable ($versionField INT, $signatureField TEXT)');
         await db.insert(versionTable, <String, dynamic>{
           versionField: 0,
           signatureField: internalSignature
         });
-        await db.execute("DROP TABLE IF EXISTS $storesTable");
-        await db.execute("CREATE TABLE $storesTable " //
-            "($nameField TEXT UNIQUE, $metaField TEXT)");
+        await db.execute('DROP TABLE IF EXISTS $storesTable');
+        await db.execute('CREATE TABLE $storesTable ' //
+            '($nameField TEXT UNIQUE, $metaField TEXT)');
         oldVersion = 0;
       }
 
@@ -230,21 +230,19 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     sqlDb = await _openSqlDb(name);
 
     Future _checkVersion(IdbTransactionSqflite transaction) async {
-      bool upgrading = false;
+      var upgrading = false;
 
       // Wrap in init block so that last one win
 
       // Prevent upgrading when opening twice the database
       // oldVersion is only null if the database was already opened
-      if (oldVersion == null) {
-        oldVersion = newVersion;
-      }
+      oldVersion ??= newVersion;
 
-      //print("$oldVersion vs $newVersion");
+      //print('$oldVersion vs $newVersion');
       if (oldVersion != newVersion) {
         if (oldVersion > newVersion) {
           // cannot downgrade
-          throw StateError("cannot downgrade from $oldVersion to $newVersion");
+          throw StateError('cannot downgrade from $oldVersion to $newVersion');
         } else {
           upgrading = true;
 
@@ -280,7 +278,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       }
     }
 
-    IdbTransactionMeta txnMeta = meta.transaction(null, idbModeReadWrite);
+    var txnMeta = meta.transaction(null, idbModeReadWrite);
     var transaction = IdbTransactionSqflite(this, txnMeta);
     await transaction.run(() async {
       await _checkVersion(transaction);
@@ -290,8 +288,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   @override
   ObjectStore createObjectStore(String name,
       {String keyPath, bool autoIncrement = false}) {
-    IdbObjectStoreMeta storeMeta =
-        IdbObjectStoreMeta(name, keyPath, autoIncrement);
+    var storeMeta = IdbObjectStoreMeta(name, keyPath, autoIncrement);
     meta.createObjectStore(storeMeta);
 
     var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
@@ -305,21 +302,21 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     list.forEach((row) {
       var map =
           (jsonDecode(row['meta'] as String) as Map)?.cast<String, dynamic>();
-      IdbObjectStoreMeta storeMeta = IdbObjectStoreMeta.fromMap(map);
+      var storeMeta = IdbObjectStoreMeta.fromMap(map);
       meta.putObjectStore(storeMeta);
     });
   }
 
   @override
   Transaction transaction(storeNameOrStoreNames, String mode) {
-    IdbTransactionMeta txnMeta = meta.transaction(storeNameOrStoreNames, mode);
+    var txnMeta = meta.transaction(storeNameOrStoreNames, mode);
 
     return IdbTransactionSqflite(this, txnMeta);
   }
 
   @override
   Transaction transactionList(List<String> stores, String mode) {
-    IdbTransactionMeta txnMeta = meta.transaction(stores, mode);
+    var txnMeta = meta.transaction(stores, mode);
     return IdbTransactionSqflite(this, txnMeta);
   }
 
@@ -338,7 +335,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   Stream<VersionChangeEvent> get onVersionChange {
     // only fired when a new call is made!
     if (onVersionChangeCtlr != null) {
-      throw UnsupportedError("onVersionChange should be called only once");
+      throw UnsupportedError('onVersionChange should be called only once');
     }
     // sync needed in testing to make sure we receive the onCloseEvent before the
     // new database is actually open (test: websql database one keep open then one)

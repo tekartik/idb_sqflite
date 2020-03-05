@@ -42,9 +42,10 @@ dev_dependencies:
       url: git://github.com/tekartik/sqflite_more
       ref: dart2
       path: sqflite_ffi_test
-    version: '>=0.2.0'
+    version: '>=0.2.4'
   process_run: '>=0.10.1'
   dev_test: '>=0.13.1+1'
+  pedantic: '>=1.4.0'
 dependency_overrides:
   idb_sqflite:
     path: ../idb_sqflite

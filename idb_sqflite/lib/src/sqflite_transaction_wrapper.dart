@@ -46,7 +46,7 @@ class SqfliteTransactionWrapper {
   void commit() {
     if (debugTransactionWrapper) {
       if (_operationCount != null) {
-        _log("COMMIT");
+        _log('COMMIT');
       } else {
         _log('End transaction no operation');
       }
@@ -61,7 +61,7 @@ class SqfliteTransactionWrapper {
    * needed for cursor with manual advance
 
   Future ping() {
-    return execute("SELECT 0 WHERE 0 = 1");
+    return execute('SELECT 0 WHERE 0 = 1');
   }
   */
   final _completer = Completer<SqfliteTransactionWrapper>();
@@ -117,7 +117,7 @@ class SqfliteTransactionWrapper {
 
   void beginOperation() {
     if (_operationCount == null) {
-      throw IdbDatabaseErrorSqflite("TransactionInactiveError");
+      throw IdbDatabaseErrorSqflite('TransactionInactiveError');
     }
     _operationCount++;
     // idbDevPrint('_beginOperation $_operationCount');

@@ -40,7 +40,7 @@ class IdbFactorySqflite extends IdbFactoryBase {
       throw ArgumentError('dbName cannot be null');
     }
 
-    bool added = false;
+    var added = false;
     try {
       added = await globalStore.addDatabaseName(dbName);
       var database = IdbDatabaseSqflite(this, dbName);

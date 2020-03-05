@@ -1,8 +1,8 @@
 import 'package:sqflite/sqlite_api.dart' as sqflite;
 
-final String globalStoreDbName = "com.tekartik.idb.global_store";
+final String globalStoreDbName = 'com.tekartik.idb.global_store';
 
-final String databaseTable = "database";
+final String databaseTable = 'database';
 
 class SqfliteGlobalStore {
   SqfliteGlobalStore(this.sqfliteDatabaseFactory);
@@ -44,7 +44,7 @@ class SqfliteGlobalStore {
   Future<bool> deleteDatabaseName(String name) async {
     var db = await database;
     try {
-      int count =
+      var count =
           await db.delete(databaseTable, where: 'name = ?', whereArgs: [name]);
       return count > 0;
     } catch (e) {

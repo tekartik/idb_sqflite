@@ -9,9 +9,9 @@ class IdbErrorSqflite extends DatabaseError {
 
   @override
   String toString() {
-    String text = "IdbErrorSqflite($errorCode)";
+    var text = 'IdbErrorSqflite($errorCode)';
     if (message != null) {
-      text += ": $message";
+      text += ': $message';
     }
     return text;
   }
@@ -20,7 +20,7 @@ class IdbErrorSqflite extends DatabaseError {
 class IdbDatabaseErrorSqflite extends DatabaseError {
   IdbDatabaseErrorSqflite(this._nativeError) : super(null);
 
-  dynamic _nativeError;
+  final _nativeError;
 
   @override
   String get message {

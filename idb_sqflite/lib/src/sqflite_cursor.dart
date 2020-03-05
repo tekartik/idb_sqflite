@@ -148,12 +148,8 @@ void checkOpenCursorArguments(dynamic key, KeyRange range) {
 abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
     implements _IdbControllerSqflite {
   _IdbCursorBaseControllerSqflite(this.direction, this.autoAdvance) {
-    if (direction == null) {
-      direction = idbDirectionNext;
-    }
-    if (autoAdvance == null) {
-      autoAdvance = false;
-    }
+    direction ??= idbDirectionNext;
+    autoAdvance ??= false;
   }
 
   String direction;
@@ -173,10 +169,10 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
   T get newCursor;
 
   // Sync must be true
-  StreamController<T> _ctlr = StreamController(sync: true);
+  final _ctlr = StreamController<T>(sync: true);
 
   bool get currentIndexValid {
-    int length = _rows.length;
+    var length = _rows.length;
 
     return (currentIndex >= 0) && (currentIndex < length);
   }

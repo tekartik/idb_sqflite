@@ -1,4 +1,4 @@
-const String internalSignature = "com.tekartik.idb";
+const String internalSignature = 'com.tekartik.idb';
 const int internalVersion = 1;
 
 /// one row per store

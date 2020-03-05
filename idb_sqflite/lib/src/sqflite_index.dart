@@ -62,7 +62,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
           'FROM $tableName INNER JOIN $sqlStoreTableName ON $tableName.$primaryIdColumnName = $sqlStoreTableName.$sqliteRowId');
       if (isMultiKey) {
         // Create index on each key
-        for (int i = 0; i < multiKeyCount; i++) {
+        for (var i = 0; i < multiKeyCount; i++) {
           var keyColumnName = keyIndexToKeyName(i);
           batch.execute(
               'CREATE INDEX ${keyColumnNameToSqlIndexName(keyColumnName)} ON $tableName ($keyColumnName)');
@@ -70,9 +70,9 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
       }
       // Create index on all keys
       var sb = StringBuffer();
-      sb.write("CREATE ");
+      sb.write('CREATE ');
       if (unique) {
-        sb.write("UNIQUE ");
+        sb.write('UNIQUE ');
       }
       sb.write(
           'INDEX ${keyColumnNameToSqlIndexName(keyColumnName)} ON $tableName '
@@ -100,7 +100,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   @override
   Future<int> count([keyOrKeyRange]) {
     return _checkIndex(() {
-      String tableName = sqlIndexTableName;
+      var tableName = sqlIndexTableName;
       var query = SqfliteCountQuery(tableName, keyColumnNames, keyOrKeyRange);
       return query.count(transaction);
     });
@@ -203,7 +203,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
         if (isMultiKey) {
           assert(keyValue is List && keyValue.length == multiKeyCount);
           // Create index on each key plus one for all
-          for (int i = 0; i < multiKeyCount; i++) {
+          for (var i = 0; i < multiKeyCount; i++) {
             var keyColumnName = keyIndexToKeyName(i);
             map[keyColumnName] = encodeKey((keyValue as List)[i]);
           }

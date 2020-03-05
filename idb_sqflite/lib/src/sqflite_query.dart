@@ -11,8 +11,8 @@ class SqfliteQuery {
   List<Object> arguments;
 }
 
-const String _sqlCountColumnName = "_COUNT";
-const _sqlCount = "COUNT(*) AS $_sqlCountColumnName";
+const String _sqlCountColumnName = '_COUNT';
+const _sqlCount = 'COUNT(*) AS $_sqlCountColumnName';
 
 class SqfliteSelectQuery extends SqfliteQuery {
   SqfliteSelectQuery(
@@ -23,9 +23,9 @@ class SqfliteSelectQuery extends SqfliteQuery {
     this._direction,
   );
   List<String> columns;
-  String _sqlTableName;
+  final String _sqlTableName;
   var keyOrKeyRange;
-  String _direction;
+  final String _direction;
   List<String> keyColumns;
 
   Future<List<Map<String, dynamic>>> execute(
@@ -35,21 +35,21 @@ class SqfliteSelectQuery extends SqfliteQuery {
     if (_direction != null) {
       switch (_direction) {
         case idbDirectionNext:
-          order = "ASC";
+          order = 'ASC';
           break;
         case idbDirectionPrev:
-          order = "DESC";
+          order = 'DESC';
           break;
 
         default:
           throw ArgumentError("direction '$_direction' not supported");
       }
     }
-    List args = [];
+    var args = [];
     var sb = StringBuffer();
 
     if (keyOrKeyRange is KeyRange) {
-      KeyRange keyRange = keyOrKeyRange as KeyRange;
+      var keyRange = keyOrKeyRange as KeyRange;
 
       var lowers = valueAsList(keyRange.lower)
           ?.map((key) => encodeKey(key))
@@ -63,7 +63,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
       // lower
       var sbLower = StringBuffer();
       if (lowers != null) {
-        for (int i = 0; i < keyColumns.length; i++) {
+        for (var i = 0; i < keyColumns.length; i++) {
           var column = keyColumns[i];
           var key = lowers[i];
 
@@ -82,7 +82,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
         }
 
         // close parenthesis
-        for (int i = 1; i < keyColumns.length; i++) {
+        for (var i = 1; i < keyColumns.length; i++) {
           sbLower.write('))');
         }
       }
@@ -90,7 +90,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
       // lower first
       var sbUpper = StringBuffer();
       if (uppers != null) {
-        for (int i = 0; i < keyColumns.length; i++) {
+        for (var i = 0; i < keyColumns.length; i++) {
           var column = keyColumns[i];
           var key = uppers[i];
 
@@ -109,7 +109,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
         }
 
         // close parenthesis
-        for (int i = 1; i < keyColumns.length; i++) {
+        for (var i = 1; i < keyColumns.length; i++) {
           sbUpper.write('))');
         }
       }
@@ -132,17 +132,17 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
         if (keyRange.lower != null) {
           if (keyRange.lowerOpen == true) {
-            sqlSelect += " AND $keyColumns > ?";
+            sqlSelect += ' AND $keyColumns > ?';
           } else {
-            sqlSelect += " AND $keyColumns >= ?";
+            sqlSelect += ' AND $keyColumns >= ?';
           }
           args.add(keyRange.lower);
         }
         if (keyRange.upper != null) {
           if (keyRange.upperOpen == true) {
-            sqlSelect += " AND $keyColumns < ?";
+            sqlSelect += ' AND $keyColumns < ?';
           } else {
-            sqlSelect += " AND $keyColumns <= ?";
+            sqlSelect += ' AND $keyColumns <= ?';
           }
           args.add(keyRange.upper);
         }
