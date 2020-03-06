@@ -4,7 +4,7 @@ homepage: https://github.com/tekartik/idb_sqflite/tree/master/idb_sqflite
 version: 0.1.0+6
 
 environment:
-  sdk: ">=2.4.0-dev.0 <3.0.0"
+  sdk: ">=2.7.0-dev.0 <3.0.0"
 
 dependencies:
   flutter:

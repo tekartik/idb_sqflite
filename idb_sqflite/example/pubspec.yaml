@@ -3,7 +3,7 @@ description: idb_sqflite example
 version: 0.1.0
 
 environment:
-  sdk: ">=2.4.0-dev.0 <3.0.0"
+  sdk: ">=2.7.0-dev.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -14,3 +14,4 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  pedantic:
