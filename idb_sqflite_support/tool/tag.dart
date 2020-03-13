@@ -8,10 +8,10 @@ import 'package:path/path.dart';
 
 Future main() async {
   var shell = Shell();
-  var version = Version.parse(
-      (loadYaml(await File(join('idb_sqflite', 'pubspec.yaml')).readAsString())
-              as Map)['version']
-          ?.toString());
+  var version = Version.parse((loadYaml(
+          await File(join('..', 'idb_sqflite', 'pubspec.yaml'))
+              .readAsString()) as Map)['version']
+      ?.toString());
   print('Version $version');
   print('Tap anything or CTRL-C: $version');
 
@@ -20,4 +20,5 @@ Future main() async {
 git tag v$version
 git push origin --tags
 ''');
+  await sharedStdIn.terminate();
 }
