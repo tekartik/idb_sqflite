@@ -1,9 +1,10 @@
 import 'package:idb_sqflite/idb_sqflite.dart';
+import 'package:sqflite/sqflite.dart';
 
 Future main() async {
   // The sqflite base factory
 
-  var factory = idbFactorySqflite;
+  var factory = getIdbFactorySqflite(databaseFactory);
   // define the store name
   const storeName = 'records';
 
