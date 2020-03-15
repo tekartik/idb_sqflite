@@ -4,7 +4,7 @@ import 'package:idb_shim/src/common/common_factory.dart';
 import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_global_store.dart';
-import 'package:sqflite/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 /// idb_sqflite factory name
 const String idbFactoryNameSqflite = 'sqflite';

@@ -4,7 +4,7 @@ import 'package:idb_shim/idb_client.dart';
 import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
-import 'package:sqflite/utils/utils.dart';
+import 'package:sqflite_common/utils/utils.dart';
 
 class SqfliteQuery {
   String sqlStatement;

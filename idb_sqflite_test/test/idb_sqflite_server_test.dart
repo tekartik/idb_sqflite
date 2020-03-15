@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:sqflite_test/sqflite_test.dart';
-import 'package:tekartik_common_utils/common_utils_import.dart';
 
 import '../test_common/idb_shim/test_runner.dart';
 import '../test_common/idb_sqflite/idb_sqflite_test_.dart' as sqflite_test;

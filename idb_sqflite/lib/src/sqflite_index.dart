@@ -9,7 +9,7 @@ import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:meta/meta.dart';
-import 'package:sqflite/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   IdbIndexSqflite(this.store, this.meta);

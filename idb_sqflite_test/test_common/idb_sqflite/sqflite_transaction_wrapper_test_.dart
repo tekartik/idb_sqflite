@@ -1,6 +1,6 @@
 import 'package:dev_test/test.dart';
 import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
-import 'package:sqflite/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 defineTests(sqflite.DatabaseFactory factory) {
   sqflite.Database db;

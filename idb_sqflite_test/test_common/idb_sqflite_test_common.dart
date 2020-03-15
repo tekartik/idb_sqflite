@@ -4,11 +4,11 @@ import 'package:idb_sqflite/idb_sqflite.dart';
 import 'idb_shim/idb_test_common.dart';
 
 export 'idb_shim/idb_test_common.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class TestContextSqflite extends TestContext {
   TestContextSqflite() {
-    factory = getIdbFactorySqflite(databaseFactory);
+    factory = getIdbFactorySqflite(databaseFactoryFfi);
   }
 
   @override

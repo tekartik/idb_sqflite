@@ -7,6 +7,18 @@ Future main() async {
 
   for (var dir in [
     'idb_sqflite',
+  ]) {
+    shell = shell.pushd(dir);
+    await shell.run('''
+    
+    pub get
+    dart tool/travis.dart
+    
+        ''');
+    shell = shell.popd();
+  }
+
+  for (var dir in [
     'idb_sqflite_test',
   ]) {
     shell = shell.pushd(dir);

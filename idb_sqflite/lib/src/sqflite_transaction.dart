@@ -7,7 +7,7 @@ import 'package:idb_shim/src/common/common_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
-import 'package:sqflite/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 bool debugTransactionSqflite = false; // devWarning(true);
 

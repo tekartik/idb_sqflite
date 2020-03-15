@@ -13,7 +13,7 @@ import 'package:idb_sqflite/src/sqflite_index.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
-import 'package:sqflite/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 String sanitizeDbName(String name) => name;
 

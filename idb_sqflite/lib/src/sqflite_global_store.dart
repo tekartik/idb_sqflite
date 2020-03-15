@@ -1,4 +1,4 @@
-import 'package:sqflite/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 final String globalStoreDbName = 'com.tekartik.idb.global_store';
 

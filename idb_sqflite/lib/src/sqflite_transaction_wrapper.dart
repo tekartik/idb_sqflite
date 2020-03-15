@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:idb_sqflite/src/sqflite_error.dart';
-import 'package:sqflite/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 var debugTransactionWrapper = false; // devWarning(true);
 
