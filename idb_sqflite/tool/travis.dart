@@ -11,12 +11,4 @@ dartfmt -n --set-exit-if-changed .
 pub run test -p vm -j 1
 
 ''');
-
-  shell = shell.pushd('example');
-
-  await shell.run('''
-
-flutter analyze
-
-''');
 }
