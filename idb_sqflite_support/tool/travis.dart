@@ -7,6 +7,7 @@ Future main() async {
 
   for (var dir in [
     'idb_sqflite',
+    'idb_sqflite_common_test',
   ]) {
     shell = shell.pushd(dir);
     await shell.run('''
@@ -18,7 +19,7 @@ Future main() async {
     shell = shell.popd();
   }
 
-  for (var dir in [
+  for (var dir in <String>[
     'idb_sqflite_test',
   ]) {
     shell = shell.pushd(dir);

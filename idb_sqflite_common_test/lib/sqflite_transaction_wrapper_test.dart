@@ -1,4 +1,4 @@
-import 'package:dev_test/test.dart';
+import 'package:test/test.dart';
 import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 

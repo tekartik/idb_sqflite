@@ -46,6 +46,8 @@ dev_dependencies:
 dependency_overrides:
   idb_sqflite:
     path: ../idb_sqflite
+  idb_sqflite_common_test:
+    path: ../idb_sqflite_common_test
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
