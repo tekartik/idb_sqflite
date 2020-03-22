@@ -13,7 +13,7 @@ void defineTests(IdbFactory factory) {
         await factory.deleteDatabase(dbName);
 
         void _initializeDatabase(VersionChangeEvent e) {
-          Database db = e.database;
+          var db = e.database;
           db.createObjectStore('name', keyPath: 'keyPath', autoIncrement: true);
         }
 
@@ -37,8 +37,8 @@ void defineTests(IdbFactory factory) {
     group('multi_entry', () {
       test('extra_table', () async {
         void _initializeDatabase(VersionChangeEvent e) {
-          Database db = e.database;
-          ObjectStore objectStore =
+          var db = e.database;
+          var objectStore =
               db.createObjectStore(testStoreName, autoIncrement: true);
           objectStore.createIndex(testNameIndex, testNameField,
               multiEntry: true);
@@ -90,8 +90,8 @@ void defineTests(IdbFactory factory) {
     group('index', () {
       test('content', () async {
         void _initializeDatabase(VersionChangeEvent e) {
-          Database db = e.database;
-          ObjectStore objectStore =
+          var db = e.database;
+          var objectStore =
               db.createObjectStore(testStoreName, autoIncrement: true);
           objectStore.createIndex(testNameIndex, testNameField);
         }

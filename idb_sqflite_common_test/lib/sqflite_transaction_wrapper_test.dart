@@ -2,7 +2,7 @@ import 'package:test/test.dart';
 import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
-defineTests(sqflite.DatabaseFactory factory) {
+void defineTests(sqflite.DatabaseFactory factory) {
   sqflite.Database db;
   setUp(() async {
     var path = 'transaction_wrapper.db';
