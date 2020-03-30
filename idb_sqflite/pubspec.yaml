@@ -1,7 +1,7 @@
 name: idb_sqflite
 description: IndexedDB API database support on top of sqflite
 homepage: https://github.com/tekartik/idb_sqflite/tree/master/idb_sqflite
-version: 0.3.0-dev.1
+version: 0.3.0-dev.2
 
 environment:
   sdk: ">=2.7.0-dev.0 <3.0.0"
