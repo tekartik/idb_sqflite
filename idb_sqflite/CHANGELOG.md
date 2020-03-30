@@ -1,6 +1,6 @@
-## 0.3.0-dev.2
+## 0.3.0
 
-* No longer depends on flutter, sqflite must be explicitely added as a dependency.
+* No longer depends on flutter, sqflite must be explicitly added as a dependency.
 * Add support for `DateTime` and `Uint8List`
 
 ## 0.2.0
