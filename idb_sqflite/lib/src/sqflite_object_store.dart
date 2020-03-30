@@ -13,6 +13,7 @@ import 'package:idb_sqflite/src/sqflite_index.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
+import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:meta/meta.dart';
 
 class IdbObjectStoreSqflite
@@ -161,6 +162,7 @@ class IdbObjectStoreSqflite
 
   @override
   Future add(dynamic value, [dynamic key]) {
+    value = toSqfliteValue(value);
     return _checkWritableStore(() => catchAsyncSqfliteError(() {
           checkKeyValueParam(
               keyPath: keyPath,
@@ -205,6 +207,7 @@ class IdbObjectStoreSqflite
 
   @override
   Future put(dynamic value, [dynamic key]) {
+    value = toSqfliteValue(value);
     return _checkWritableStore(() => catchAsyncSqfliteError(() {
           checkKeyValueParam(
               keyPath: keyPath,
@@ -220,7 +223,7 @@ class IdbObjectStoreSqflite
   }
 
   dynamic valueRowToRecord(dynamic pk, dynamic row) {
-    var value = decodeValue(row);
+    var value = fromSqfliteValue(decodeValue(row));
     if (value is Map) {
       if (keyPath != null && getMapFieldValue(value, keyPath) == null) {
         setMapFieldValue(value, keyPath, pk);

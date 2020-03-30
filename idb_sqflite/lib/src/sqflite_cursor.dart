@@ -9,6 +9,7 @@ import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
+import 'package:idb_sqflite/src/sqflite_value.dart';
 
 abstract class IdbRecordSnapshotSqflite {
   IdbRecordSnapshotSqflite(this.row);
@@ -17,7 +18,7 @@ abstract class IdbRecordSnapshotSqflite {
   dynamic get key;
   dynamic get primaryKey => decodeKey(row[primaryKeyColumnName]);
 
-  dynamic get value => decodeValue(row[valueColumnName]);
+  dynamic get value => fromSqfliteValue(decodeValue(row[valueColumnName]));
 }
 
 class IdbStoreRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
@@ -75,6 +76,7 @@ abstract class _IdbCommonCursorSqflite<T extends Cursor> {
   }
 
   Future update(value) async {
+    value = toSqfliteValue(value);
     await _ctlr.store.putImpl(value, primaryKey);
     // Index only handle
     if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {

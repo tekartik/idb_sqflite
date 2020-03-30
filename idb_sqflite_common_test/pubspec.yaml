@@ -17,14 +17,13 @@ environment:
   sdk: ">=2.7.0-dev.0 <3.0.0"
 
 dependencies:
-  idb_shim: '>=1.10.3-dev.2 <3.0.0'
   idb_sqflite: '>=0.1.0+4 <2.0.0'
   idb_test:
     git:
       url: git://github.com/tekartik/idb_shim.dart
       ref: develop
       path: idb_test
-    version: '>=0.1.1'
+    version: '>=0.1.3'
 
 dev_dependencies:
   sqflite_common_ffi: '>=0.1.0'
