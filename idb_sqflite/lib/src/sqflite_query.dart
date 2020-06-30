@@ -87,7 +87,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
         }
       }
 
-      // lower first
+      // upper
       var sbUpper = StringBuffer();
       if (uppers != null) {
         for (var i = 0; i < keyColumns.length; i++) {

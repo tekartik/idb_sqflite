@@ -70,8 +70,7 @@ void main() {
         }
       ];
       for (var value in identicals) {
-        var encoded = value;
-        encoded = toSqfliteValue(value);
+        var encoded = toSqfliteValue(value);
 
         expect(identical(encoded, value), isTrue,
             reason:
