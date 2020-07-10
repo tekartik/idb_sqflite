@@ -30,6 +30,10 @@ dev_dependencies:
   process_run: '>=0.10.1'
   test: '>=0.13.1+1'
   pedantic: '>=1.4.0'
+  build_runner: '>=1.5.0'
+  build_test: '>=0.10.2'
+  build_web_compilers: '>=0.4.0'
+
 dependency_overrides:
   idb_sqflite:
     path: ../idb_sqflite
