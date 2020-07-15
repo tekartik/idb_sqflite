@@ -1,4 +1,4 @@
-## 0.3.0
+## 0.3.0+1
 
 * No longer depends on flutter, sqflite must be explicitly added as a dependency.
 * Add support for `DateTime` and `Uint8List`
