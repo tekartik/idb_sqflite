@@ -1,8 +1,8 @@
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_sqflite/idb_sqflite.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
-import 'package:test/test.dart';
 import 'package:idb_test/idb_test_common.dart';
+import 'package:test/test.dart';
 
 void defineTests(IdbFactory factory) {
   group('impl', () {
@@ -125,6 +125,44 @@ void defineTests(IdbFactory factory) {
           db.close();
         }
       });
+
+      test('parallel_multi_insert', () async {
+        var txnCount = 4;
+        var insertCount = 1000;
+        void _initializeDatabase(VersionChangeEvent e) {
+          var db = e.database;
+          db.createObjectStore(testStoreName);
+        }
+
+        var name = 'parallel_multi_insert';
+        await factory.deleteDatabase(name);
+        var db = await factory.open(name,
+            version: 1, onUpgradeNeeded: _initializeDatabase);
+        var id = 1;
+        Future insert(int count) async {
+          var txn = db.transaction(testStoreName, idbModeReadWrite);
+          var store = txn.objectStore(testStoreName);
+          var list = List.generate(count, (index) => {'value': id}).toList();
+          // Put object in parallel
+          list.forEach((obj) {
+            store.put(obj, ++id);
+          });
+          await txn.completed;
+        }
+
+        // Call insert in parallel
+        var futures =
+            List.generate(txnCount, (i) => insert(insertCount)).toList();
+        await Future.wait(futures);
+        var txn = db.transaction(testStoreName, idbModeReadOnly);
+        var store = txn.objectStore(testStoreName);
+        // Verify everything was inserted
+        expect(await store.count(), insertCount * txnCount);
+        db.close();
+      },
+          timeout: Timeout(Duration(
+              minutes:
+                  5))); // flutter: Warning database has been locked for 0:00:10.000000. Make sure you always use the transaction object for database operations during a transaction
     });
   });
 }
