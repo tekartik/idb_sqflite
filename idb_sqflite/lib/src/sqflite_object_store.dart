@@ -364,4 +364,36 @@ class IdbObjectStoreSqflite
       return query.count(transaction);
     });
   }
+
+  @override
+  Future<List> getAll([dynamic query, int count]) {
+    return checkStore(() {
+      var columns = [valueColumnName];
+      var keyColumnNames = [primaryKeyColumnName];
+      var selectQuery = SqfliteSelectQuery(
+          columns, sqlTableName, keyColumnNames, query, idbDirectionNext,
+          limit: count);
+      return selectQuery.execute(transaction).then((rs) {
+        return rs
+            .map((row) => fromSqfliteValue(decodeValue(row[valueColumnName])))
+            .toList(growable: false);
+      });
+    });
+  }
+
+  @override
+  Future<List> getAllKeys([query, int count]) {
+    return checkStore(() {
+      var columns = [primaryKeyColumnName];
+      var keyColumnNames = [primaryKeyColumnName];
+      var selectQuery = SqfliteSelectQuery(
+          columns, sqlTableName, keyColumnNames, query, idbDirectionNext,
+          limit: count);
+      return selectQuery.execute(transaction).then((rs) {
+        return rs
+            .map((row) => decodeKey(row[primaryKeyColumnName]))
+            .toList(growable: false);
+      });
+    });
+  }
 }

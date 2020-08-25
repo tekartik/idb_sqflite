@@ -15,7 +15,7 @@ Future main() async {
   sqfliteFfiInit();
 
   var factory = databaseFactoryFfi;
-  // factory.setLogLevel(sqfliteLogLevelVerbose);
+  // await factory.setLogLevel(sqfliteLogLevelVerbose);
   group('sqflite_ffi', () {
     var idbContext = TestContextSqfliteFfi();
     defineAllTests(idbContext);

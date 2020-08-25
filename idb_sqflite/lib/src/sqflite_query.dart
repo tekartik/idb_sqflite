@@ -16,17 +16,18 @@ const _sqlCount = 'COUNT(*) AS $_sqlCountColumnName';
 
 class SqfliteSelectQuery extends SqfliteQuery {
   SqfliteSelectQuery(
-    this.columns,
-    this._sqlTableName,
-    this.keyColumns, //
-    this.keyOrKeyRange,
-    this._direction,
-  );
+      this.columns,
+      this._sqlTableName,
+      this.keyColumns, //
+      this.keyOrKeyRange,
+      this._direction,
+      {this.limit});
   List<String> columns;
   final String _sqlTableName;
   var keyOrKeyRange;
   final String _direction;
   List<String> keyColumns;
+  final int limit;
 
   Future<List<Map<String, dynamic>>> execute(
       IdbTransactionSqflite transaction) {
@@ -172,7 +173,8 @@ class SqfliteSelectQuery extends SqfliteQuery {
         columns: columns,
         where: sb.isEmpty ? null : sb.toString(),
         whereArgs: args,
-        orderBy: orderBy);
+        orderBy: orderBy,
+        limit: limit);
   }
 }
 

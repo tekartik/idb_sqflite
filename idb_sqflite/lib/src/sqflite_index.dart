@@ -8,6 +8,7 @@ import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
+import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:meta/meta.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
@@ -227,6 +228,40 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
     await transaction.batch((batch) {
       batch.delete(sqlIndexTableName,
           where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
+    });
+  }
+
+  @override
+  Future<List> getAll([dynamic query, int count]) {
+    return _checkIndex(() {
+      var tableName = sqlIndexViewName;
+      var columns = [valueColumnName];
+      var keyColumnNames = this.keyColumnNames;
+      var selectQuery = SqfliteSelectQuery(
+          columns, tableName, keyColumnNames, query, idbDirectionNext,
+          limit: count);
+      return selectQuery.execute(transaction).then((rs) {
+        return rs
+            .map((row) => fromSqfliteValue(decodeValue(row[valueColumnName])))
+            .toList(growable: false);
+      });
+    });
+  }
+
+  @override
+  Future<List> getAllKeys([query, int count]) {
+    return _checkIndex(() {
+      var tableName = sqlIndexViewName;
+      var columns = [primaryKeyColumnName];
+      var keyColumnNames = this.keyColumnNames;
+      var selectQuery = SqfliteSelectQuery(
+          columns, tableName, keyColumnNames, query, idbDirectionNext,
+          limit: count);
+      return selectQuery.execute(transaction).then((rs) {
+        return rs
+            .map((row) => decodeKey(row[primaryKeyColumnName]))
+            .toList(growable: false);
+      });
     });
   }
 }
