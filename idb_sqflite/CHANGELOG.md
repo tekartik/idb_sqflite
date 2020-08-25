@@ -1,4 +1,4 @@
-## 0.3.1-dev.1
+## 0.3.1
 
 * Supports `ObjectStore.getAll/getAllKeys` and `Index.getAll/getAllKeys`
 * Bump idb_shim dependency to 1.12.0
