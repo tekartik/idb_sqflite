@@ -126,35 +126,15 @@ class SqfliteSelectQuery extends SqfliteQuery {
           sb.write('($sbLower) AND ($sbUpper)');
         }
       }
-
-      /*
-      for (int i = 0; i < keyColumns.length; i++) {
-        var sbWhere = StringBuffer();
-
-        if (keyRange.lower != null) {
-          if (keyRange.lowerOpen == true) {
-            sqlSelect += ' AND $keyColumns > ?';
-          } else {
-            sqlSelect += ' AND $keyColumns >= ?';
-          }
-          args.add(keyRange.lower);
-        }
-        if (keyRange.upper != null) {
-          if (keyRange.upperOpen == true) {
-            sqlSelect += ' AND $keyColumns < ?';
-          } else {
-            sqlSelect += ' AND $keyColumns <= ?';
-          }
-          args.add(keyRange.upper);
-        }
-      }
-
-       */
     } else if (keyOrKeyRange != null) {
       var keys = valueAsList(keyOrKeyRange);
-      assert(keys.length == keyColumns.length);
-      sb.write('${keyColumns.map((column) => '$column = ?').join(' AND ')}');
-      args.addAll(keys.map((key) => encodeKey(key)));
+      // We're missing some keys, make it false
+      if (keys.length != keyColumns.length) {
+        sb.write('1 = 0');
+      } else {
+        sb.write('${keyColumns.map((column) => '$column = ?').join(' AND ')}');
+        args.addAll(keys.map((key) => encodeKey(key)));
+      }
     } else {
       // Not null needed for index key
       if (keyColumns.isNotEmpty && keyColumns.first != primaryKeyColumnName) {

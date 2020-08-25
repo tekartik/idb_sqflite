@@ -1,3 +1,8 @@
+## 0.3.1-dev.1
+
+* Supports `ObjectStore.getAll/getAllKeys` and `Index.getAll/getAllKeys`
+* Bump idb_shim dependency to 1.12.0
+
 ## 0.3.0+1
 
 * No longer depends on flutter, sqflite must be explicitly added as a dependency.
