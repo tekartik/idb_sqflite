@@ -15,11 +15,11 @@ Flutter (iOS/Android/Web).
 
 ```dart
 import 'package:idb_sqflite/idb_sqflite.dart';
+import 'package:sqflite/sqflite.dart';
 
 Future main() async {
-  // The sqflite base factory
-
-  var factory = idbFactorySqflite;
+  // The sqflite flutter factory
+  var factory = getIdbFactorySqflite(databaseFactory);
   // define the store name
   const String storeName = "records";
 
