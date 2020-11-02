@@ -1,6 +1,7 @@
 // ignore_for_file: implementation_imports
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_shim/src/common/common_database.dart';
@@ -231,6 +232,10 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     Future _checkVersion(IdbTransactionSqflite transaction) async {
       var upgrading = false;
+      devPrint('_checkVersion $oldVersion $newVersion');
+
+      // Special first open case if new version is not specified
+      newVersion ??= max(oldVersion ?? 0, 1);
 
       // Wrap in init block so that last one win
 

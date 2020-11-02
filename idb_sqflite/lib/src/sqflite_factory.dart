@@ -35,7 +35,7 @@ class IdbFactorySqflite extends IdbFactoryBase {
       OnUpgradeNeededFunction onUpgradeNeeded,
       OnBlockedFunction onBlocked}) async {
     checkOpenArguments(version: version, onUpgradeNeeded: onUpgradeNeeded);
-    version ??= 1;
+    // version ??= 1;
     if (dbName == null) {
       throw ArgumentError('dbName cannot be null');
     }
