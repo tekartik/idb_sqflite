@@ -16,6 +16,8 @@ import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:meta/meta.dart';
 
+import 'core_imports.dart';
+
 class IdbObjectStoreSqflite
     with ObjectStoreWithMetaMixin
     implements ObjectStore {
@@ -103,17 +105,26 @@ class IdbObjectStoreSqflite
   }
 
   // Don't make it async as it must run before completed is called
-  Future<T> checkStore<T>(Future<T> Function() computation) {
+  Future<T> checkStore<T>(Future<T> Function() computation) async {
     // this is also an indicator
     //if (!ready) {
     // Make sure the db was not upgrade
     // TODO do this at the beginning of each transaction
 
+    // More complex during open, the user might start reading a freshly created
+    // store so let's support that by applying schema changes progressively
+    if (transaction is IdbOpenTransactionSqflite) {
+      await database
+          .applySchemaChanges(transaction as IdbOpenTransactionSqflite);
+    }
+
     _lazyPrepare ??= transaction
         .query(versionTable,
             columns: [versionField],
             where: '$versionField > ?',
-            whereArgs: [database.version])
+            whereArgs: [
+              database.version
+            ]) // TODO investigate why null in put_read_in_open_transaction
         .then((list) async {
       if (list.isNotEmpty) {
         // Send an onVersionChange event

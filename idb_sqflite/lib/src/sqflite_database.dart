@@ -66,8 +66,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
   sqflite.Database sqlDb;
 
-  Future _upgrade(IdbTransactionSqflite tx, int oldVersion, int newVersion,
-      void Function(VersionChangeEvent event) onUpgradeNeeded) async {
+  Future applySchemaChanges(IdbOpenTransactionSqflite tx) async {
     final txnMeta = tx.meta
         as IdbVersionChangeTransactionMeta; // .versionChangeTransaction;
 
@@ -142,24 +141,38 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       }
     }
 
+    // Delete store that have been deleted
+    await removeDeletedObjectStores();
+    await createObjectStores();
+    await createIndecies();
+    await removeDeletedIndecies();
+
+    // Update meta for updated Store
+    txnMeta.updatedStores
+      ..removeAll(txnMeta.createdStores)
+      ..removeAll(txnMeta.deletedStores);
+
+    await updateObjectStores();
+
+    // Remove pending meta change in case it is called again
+    // Simply create another meta
+    // txnMeta.clearChanges(); // TODO implement in idb_shim
+    txnMeta.deletedIndexes.clear();
+    txnMeta.createdIndexes.clear();
+    txnMeta.createdStores.clear();
+    txnMeta.deletedStores.clear();
+    txnMeta.updatedStores.clear();
+  }
+
+  Future _upgrade(IdbTransactionSqflite tx, int oldVersion, int newVersion,
+      FutureOr<void> Function(VersionChangeEvent event) onUpgradeNeeded) async {
     versionChangeTransaction = tx;
     try {
       var event = IdbVersionChangeEventSqflite(this, oldVersion, newVersion);
 
-      onUpgradeNeeded(event);
+      await onUpgradeNeeded(event);
 
-      // Delete store that have been deleted
-      await removeDeletedObjectStores();
-      await createObjectStores();
-      await createIndecies();
-      await removeDeletedIndecies();
-
-      // Update meta for updated Store
-      txnMeta.updatedStores
-        ..removeAll(txnMeta.createdStores)
-        ..removeAll(txnMeta.deletedStores);
-
-      await updateObjectStores();
+      await applySchemaChanges(tx as IdbOpenTransactionSqflite);
     } finally {
       // nullify when done
       versionChangeTransaction = null;
@@ -232,7 +245,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     Future _checkVersion(IdbTransactionSqflite transaction) async {
       var upgrading = false;
-      devPrint('_checkVersion $oldVersion $newVersion');
+      // devPrint('_checkVersion $oldVersion $newVersion');
 
       // Special first open case if new version is not specified
       newVersion ??= max(oldVersion ?? 0, 1);
@@ -242,6 +255,9 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       // Prevent upgrading when opening twice the database
       // oldVersion is only null if the database was already opened
       oldVersion ??= newVersion;
+
+      // Set the version right away it used
+      meta.version = newVersion;
 
       //print('$oldVersion vs $newVersion');
       if (oldVersion != newVersion) {
@@ -256,7 +272,6 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
             await transaction
                     .update(versionTable, {versionField: newVersion}) //
                 ;
-            meta.version = newVersion;
           }
 
           //return initBlock(() {
@@ -278,16 +293,23 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       }
 
       if (!upgrading) {
-        meta.version = newVersion;
         await _loadStores(transaction);
       }
     }
 
     var txnMeta = meta.transaction(null, idbModeReadWrite);
-    var transaction = IdbTransactionSqflite(this, txnMeta);
-    await transaction.run(() async {
-      await _checkVersion(transaction);
-    });
+    var transaction = IdbOpenTransactionSqflite(this, txnMeta);
+    try {
+      await transaction.run(() async {
+        await _checkVersion(transaction);
+      });
+      await transaction.completed;
+    } catch (e) {
+      // On error close
+      // devPrint('open exception $e');
+      close();
+      rethrow;
+    }
   }
 
   @override

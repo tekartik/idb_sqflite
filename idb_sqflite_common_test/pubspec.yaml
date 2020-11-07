@@ -1,6 +1,6 @@
 name: idb_sqflite_common_test
 description: Indexeddb sqflite test
-
+publish_to: none
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
 # followed by an optional build number separated by a +.
@@ -17,7 +17,7 @@ environment:
   sdk: ">=2.8.0 <3.0.0"
 
 dependencies:
-  idb_sqflite: '>=0.1.0+4 <2.0.0'
+  idb_sqflite: '>=1.12.2-dev.1 <2.0.0'
   idb_test:
     git:
       url: git://github.com/tekartik/idb_shim.dart
@@ -38,7 +38,9 @@ dependency_overrides:
   idb_sqflite:
     path: ../idb_sqflite
   # Dev only
+  # idb_shim:
+  #    path: ../../idb_shim.dart/idb_shim
   # idb_test:
-  #  path: ../../idb_shim.dart/idb_test
+  #    path: ../../idb_shim.dart/idb_test
   # sqflite_common_ffi:
   #  path: ../../sqflite/sqflite_common_ffi

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:idb_sqflite/src/idb_import.dart';
 import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
@@ -15,27 +16,47 @@ class SqfliteTransactionWrapper {
           }
           _transactionReadyCompleter.complete(txn);
           await _operationsCompleter.future;
+
+          // Cancel the transaction if aborted
+          if (completedException != null) {
+            throw completedException;
+          }
         });
         if (debugTransactionWrapper) {
           _log('Transaction complete');
         }
-        _completer.complete(this);
+        _complete();
       } catch (e, st) {
         if (debugTransactionWrapper) {
           _log('Transaction error $e');
         }
-        _completer.completeError(e, st);
+        _completeError(e, st);
       }
     }();
     // Terminate as soon as possible
     asyncCompleteOperationsIfDone();
   }
+  void _complete() {
+    if (!_completer.isCompleted) {
+      _completer.complete(this);
+    }
+  }
+
+  void _completeError(e, [StackTrace st]) {
+    if (!_completer.isCompleted) {
+      _completer.completeError(e, st);
+    }
+  }
 
   final sqflite.Database sqfliteDatabase;
+
   final _transactionReadyCompleter = Completer<sqflite.Transaction>.sync();
   final _operationsCompleter = Completer<bool>.sync();
+
   Future<sqflite.Transaction> get sqfliteTransaction =>
       _transactionReadyCompleter.future;
+  Exception completedException;
+
   /*
   SqlDatabase _database;
   var _sqlTxn;
@@ -129,6 +150,10 @@ class SqfliteTransactionWrapper {
 
     // Make it breath
     asyncCompleteOperationsIfDone();
+  }
+
+  void abort() {
+    completedException = newAbortException();
   }
 }
 

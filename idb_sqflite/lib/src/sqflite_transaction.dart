@@ -8,9 +8,14 @@ import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
+import 'idb_import.dart';
 
 bool debugTransactionSqflite = false; // devWarning(true);
 
+class IdbOpenTransactionSqflite extends IdbTransactionSqflite {
+  IdbOpenTransactionSqflite(IdbDatabaseSqflite database, IdbTransactionMeta meta) : super(database, meta);
+
+}
 class IdbTransactionSqflite extends IdbTransactionBase
     with TransactionWithMetaMixin {
   IdbTransactionSqflite(IdbDatabaseSqflite database, this.meta)
@@ -25,6 +30,7 @@ class IdbTransactionSqflite extends IdbTransactionBase
   @override
   IdbTransactionMeta meta;
   SqfliteTransactionWrapper _txn;
+  // Use for aborted
 
   IdbDatabaseSqflite get idbDatabaseSqflite => database as IdbDatabaseSqflite;
 
@@ -82,4 +88,11 @@ class IdbTransactionSqflite extends IdbTransactionBase
         prepare(batch);
         return batch.commit();
       });
+
+  @override
+  void abort() {
+    _txn.abort();
+  }
+
+  Exception get endException => _txn.completedException;
 }
