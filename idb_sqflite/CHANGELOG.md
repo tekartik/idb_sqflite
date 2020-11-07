@@ -1,3 +1,7 @@
+## 0.3.2
+
+* Add support for `Transaction.abort`
+
 ## 0.3.1+1
 
 * Supports `ObjectStore.getAll/getAllKeys` and `Index.getAll/getAllKeys`
