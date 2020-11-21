@@ -15,7 +15,7 @@ class IdbErrorSqflite extends DatabaseError {
 }
 
 class IdbDatabaseErrorSqflite extends DatabaseError {
-  IdbDatabaseErrorSqflite(this._nativeError) : super(null);
+  IdbDatabaseErrorSqflite(this._nativeError) : super('native');
 
   final _nativeError;
 
