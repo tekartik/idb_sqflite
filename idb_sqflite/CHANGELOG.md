@@ -1,3 +1,7 @@
+## 1.0.0-nullsafety.0
+
+* `nnbd` support, breaking change
+
 ## 0.3.2+1
 
 * Add support for `Transaction.abort`
