@@ -3,7 +3,7 @@ import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 void defineTests(sqflite.DatabaseFactory factory) {
-  sqflite.Database db;
+  late sqflite.Database db;
   setUp(() async {
     var path = 'transaction_wrapper.db';
     await factory.deleteDatabase(path);
@@ -11,7 +11,7 @@ void defineTests(sqflite.DatabaseFactory factory) {
   });
 
   tearDown(() async {
-    await db?.close();
+    await db.close();
   });
   test('transaction', () async {
     var wrapper = SqfliteTransactionWrapper(db);

@@ -1,8 +1,38 @@
-import 'package:idb_shim/idb_shim.dart';
 import 'package:idb_shim/idb_io.dart';
-import 'package:idb_sqflite/idb_sqflite.dart';
-import 'package:test/test.dart';
+import 'package:idb_shim/idb_shim.dart' hide Database;
+import 'package:idb_sqflite/idb_sqflite.dart' hide Database;
 import 'package:idb_sqflite/src/env_utils.dart';
+import 'package:sqflite_common/sqlite_api.dart';
+import 'package:test/test.dart';
+
+import '../idb_sqflite_test_common.dart';
+
+class _DatabaseFactoryMock implements DatabaseFactory {
+  @override
+  Future<bool> databaseExists(String path) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deleteDatabase(String path) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String> getDatabasesPath() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Database> openDatabase(String path, {OpenDatabaseOptions? options}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> setDatabasesPath(String path) {
+    throw UnimplementedError();
+  }
+}
 
 void main() {
   group('import', () {
@@ -16,7 +46,7 @@ void main() {
     });
 
     test('io', () {
-      getIdbFactorySqflite(null);
+      getIdbFactorySqflite(_DatabaseFactoryMock());
 
       try {
         idbFactorySembastIo;

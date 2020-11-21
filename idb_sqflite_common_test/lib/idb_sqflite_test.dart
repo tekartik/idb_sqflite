@@ -4,13 +4,13 @@ import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_test/idb_test_common.dart';
 import 'package:test/test.dart';
 
-void defineTests(IdbFactory factory) {
+void defineTests(IdbFactory? factory) {
   group('impl', () {
     test('open_transaction_open', () async {
-      Database db;
+      Database? db;
       try {
         var dbName = 'delete_database.db';
-        await factory.deleteDatabase(dbName);
+        await factory!.deleteDatabase(dbName);
 
         void _initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
@@ -45,11 +45,11 @@ void defineTests(IdbFactory factory) {
         }
 
         var name = 'impl_multi_entry';
-        await factory.deleteDatabase(name);
+        await factory!.deleteDatabase(name);
         var db = await factory.open(name,
             version: 1, onUpgradeNeeded: _initializeDatabase);
 
-        var sqlDb = (db as IdbDatabaseSqflite).sqlDb;
+        var sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
         var list = await sqlDb.query('sqlite_master');
 
         var names = list.map((item) => item['name']);
@@ -72,7 +72,7 @@ void defineTests(IdbFactory factory) {
           var db = e.database;
           db.deleteObjectStore(testStoreName);
         });
-        sqlDb = (db as IdbDatabaseSqflite).sqlDb;
+        sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
         list = await sqlDb.query('sqlite_master');
 
         names = list.map((item) => item['name']);
@@ -97,7 +97,7 @@ void defineTests(IdbFactory factory) {
         }
 
         var name = 'impl_multi_entry';
-        await factory.deleteDatabase(name);
+        await factory!.deleteDatabase(name);
         var db = await factory.open(name,
             version: 1, onUpgradeNeeded: _initializeDatabase);
 
@@ -105,7 +105,7 @@ void defineTests(IdbFactory factory) {
           var txn = db.transaction(testStoreName, idbModeReadWrite);
           var store = txn.objectStore(testStoreName);
           var pk = await store.put({testNameField: 1234});
-          var sqlDb = (db as IdbDatabaseSqflite).sqlDb;
+          var sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
           var list = await sqlDb.query('s__test_store');
           print(list);
           expect(list, [
@@ -135,7 +135,7 @@ void defineTests(IdbFactory factory) {
         }
 
         var name = 'parallel_multi_insert';
-        await factory.deleteDatabase(name);
+        await factory!.deleteDatabase(name);
         var db = await factory.open(name,
             version: 1, onUpgradeNeeded: _initializeDatabase);
         var id = 1;

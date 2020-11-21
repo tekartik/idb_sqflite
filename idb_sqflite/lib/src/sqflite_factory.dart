@@ -18,7 +18,7 @@ class IdbFactorySqflite extends IdbFactoryBase {
   bool get persistent => true;
 
   // global store
-  SqfliteGlobalStore _globalStore;
+  SqfliteGlobalStore? _globalStore;
   SqfliteGlobalStore get globalStore =>
       _globalStore ??= SqfliteGlobalStore(sqfliteDatabaseFactory);
 
@@ -31,14 +31,10 @@ class IdbFactorySqflite extends IdbFactoryBase {
 
   @override
   Future<Database> open(String dbName,
-      {int version,
-      OnUpgradeNeededFunction onUpgradeNeeded,
-      OnBlockedFunction onBlocked}) async {
+      {int? version,
+      OnUpgradeNeededFunction? onUpgradeNeeded,
+      OnBlockedFunction? onBlocked}) async {
     checkOpenArguments(version: version, onUpgradeNeeded: onUpgradeNeeded);
-    // version ??= 1;
-    if (dbName == null) {
-      throw ArgumentError('dbName cannot be null');
-    }
 
     var added = false;
     try {
@@ -56,7 +52,7 @@ class IdbFactorySqflite extends IdbFactoryBase {
 
   @override
   Future<IdbFactory> deleteDatabase(String dbName,
-      {OnBlockedFunction onBlocked}) async {
+      {OnBlockedFunction? onBlocked}) async {
     var path = sanitizeDbName(dbName);
     await sqfliteDatabaseFactory.deleteDatabase(path);
     await globalStore.deleteDatabaseName(dbName);

@@ -9,7 +9,6 @@ import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
-import 'package:meta/meta.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 class IdbIndexSqflite with IndexWithMetaMixin implements Index {
@@ -20,11 +19,15 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   final IdbIndexMeta meta;
 
   String get sqlIndexTableName => '${store.name}__$name';
+
   //String get sqlIndexName => sqlIndexTableName;
   // join view name
   String get sqlIndexViewName => '${sqlIndexTableName}__j';
+
   String get sqlStoreTableName => store.sqlTableName;
+
   String get sqlKeyIndexName => '${sqlIndexTableName}__k';
+
   String get sqlPrimaryKeyIndexName => '${sqlIndexTableName}__pk';
 
   String keyColumnNameToSqlIndexName(String keyColumnName) =>
@@ -35,14 +38,16 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
 
   /// true if keyPath is an array
   bool get isMultiKey => keyPath is List;
+
   int get multiKeyCount => (keyPath as List).length;
 
-  IdbTransactionSqflite get transaction => store.transaction;
+  IdbTransactionSqflite? get transaction => store.transaction;
 
   // either 'k', or 'k1, k2, k3...'
   List<String> get keyColumnNames => isMultiKey
       ? List.generate(multiKeyCount, (i) => keyIndexToKeyName(i))
       : [keyColumnName];
+
   Future create() async {
     if (multiEntry && isMultiKey) {
       throw UnsupportedError(
@@ -50,7 +55,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
     }
 
     // For multi entry we create a new table instead of an index
-    await transaction.batch((batch) {
+    await transaction!.batch((batch) {
       var tableName = sqlIndexTableName;
       batch.execute('CREATE TABLE $tableName ('
           // key BLOB or key1 BLOB, key2 BLOB...
@@ -108,25 +113,26 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   }
 
   @override
-  Future get(key) {
+  Future get(Object key) {
     checkKeyParam(key);
     return _checkIndex(() async {
-      var row = await getFirstRow(key, columns: [valueColumnName]);
+      var row = await getFirstRow(key,
+          columns: [primaryKeyColumnName, valueColumnName]);
       if (row == null) {
         return null;
       }
       return store.valueRowToRecord(
-          row[primaryKeyColumnName], row[valueColumnName]);
+          row[primaryKeyColumnName]!, row[valueColumnName]!);
     });
   }
 
   /// Returns null if not found
-  Future<Map<String, dynamic>> getFirstRow(dynamic key,
-      {@required List<String> columns}) async {
-    var rows = await transaction.query(sqlIndexViewName,
+  Future<Map<String, Object?>?> getFirstRow(Object key,
+      {List<String>? columns}) async {
+    var rows = await transaction!.query(sqlIndexViewName,
         columns: columns,
         where: '${keyColumnNames.map((name) => '$name = ?').join(' AND ')}',
-        whereArgs: itemOrItemsToList(key),
+        whereArgs: itemOrItemsToList(key)?.cast<Object>(),
         limit: 1);
     if (rows.isEmpty) {
       return null;
@@ -146,15 +152,16 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
       if (row == null) {
         return null;
       }
-      var primaryKey = decodeKey(row.values?.first);
+      var primaryKey = decodeKey(row.values.first!);
       return primaryKey;
     });
   }
 
   @override
   Stream<Cursor> openKeyCursor(
-      {key, KeyRange range, String direction, bool autoAdvance}) {
-    var ctlr = IdbIndexKeyCursorControllerSqflite(this, direction, autoAdvance);
+      {key, KeyRange? range, String? direction, bool? autoAdvance}) {
+    var ctlr = IdbIndexKeyCursorControllerSqflite(
+        this, direction ?? idbDirectionNext, autoAdvance ?? false);
 
     checkOpenCursorArguments(key, range);
     // Future
@@ -166,9 +173,9 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
 
   @override
   Stream<CursorWithValue> openCursor(
-      {key, KeyRange range, String direction, bool autoAdvance}) {
-    var ctlr =
-        IdbIndexCursorWithValueControllerSqflite(this, direction, autoAdvance);
+      {key, KeyRange? range, String? direction, bool? autoAdvance}) {
+    var ctlr = IdbIndexCursorWithValueControllerSqflite(
+        this, direction ?? idbDirectionNext, autoAdvance ?? false);
 
     checkOpenCursorArguments(key, range);
 
@@ -180,19 +187,19 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   }
 
   Future insertKey(int primaryId, dynamic keyValue) async {
-    await transaction.batch((batch) {
+    await transaction!.batch((batch) {
       insertKeyBatch(batch, primaryId, keyValue);
     });
   }
 
-  void insertKeyBatch(sqflite.Batch batch, int primaryId, dynamic keyValue) {
+  void insertKeyBatch(sqflite.Batch batch, int? primaryId, dynamic keyValue) {
     if (keyValue != null) {
       if (multiEntry) {
         var keys = valueAsSet(keyValue);
         if (keys?.isNotEmpty ?? false) {
-          for (var key in keys) {
-            key = encodeKey(key);
-            var map = <String, dynamic>{
+          for (var key in keys!) {
+            key = encodeKey(key!);
+            var map = <String, Object?>{
               primaryIdColumnName: primaryId,
               keyColumnName: key
             };
@@ -200,24 +207,32 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
           }
         }
       } else {
-        var map = <String, dynamic>{primaryIdColumnName: primaryId};
+        var map = <String, Object?>{primaryIdColumnName: primaryId};
         if (isMultiKey) {
           assert(keyValue is List && keyValue.length == multiKeyCount);
           // Create index on each key plus one for all
           for (var i = 0; i < multiKeyCount; i++) {
             var keyColumnName = keyIndexToKeyName(i);
-            map[keyColumnName] = encodeKey((keyValue as List)[i]);
+            // Can be null
+            map[keyColumnName] = _encodeKeyOrNull((keyValue as List)[i]);
           }
         } else {
-          map[keyColumnName] = encodeKey(keyValue);
+          map[keyColumnName] = encodeKey(keyValue as Object);
         }
         batch.insert(sqlIndexTableName, map);
       }
     }
   }
 
+  Object? _encodeKeyOrNull(Object? key) {
+    if (key == null) {
+      return null;
+    }
+    return encodeKey(key);
+  }
+
   Future updateKey(int primaryId, dynamic keyValue) async {
-    await transaction.batch((batch) {
+    await transaction!.batch((batch) {
       batch.delete(sqlIndexTableName,
           where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
       insertKeyBatch(batch, primaryId, keyValue);
@@ -225,14 +240,14 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   }
 
   Future deleteKey(int primaryId) async {
-    await transaction.batch((batch) {
+    await transaction!.batch((batch) {
       batch.delete(sqlIndexTableName,
           where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
     });
   }
 
   @override
-  Future<List> getAll([dynamic query, int count]) {
+  Future<List<Object>> getAll([dynamic query, int? count]) {
     return _checkIndex(() {
       var tableName = sqlIndexViewName;
       var columns = [valueColumnName];
@@ -242,14 +257,15 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
           limit: count);
       return selectQuery.execute(transaction).then((rs) {
         return rs
-            .map((row) => fromSqfliteValue(decodeValue(row[valueColumnName])))
+            .map((row) =>
+                fromSqfliteValue(decodeValue(row[valueColumnName] as Object)!))
             .toList(growable: false);
       });
     });
   }
 
   @override
-  Future<List> getAllKeys([query, int count]) {
+  Future<List<Object>> getAllKeys([query, int? count]) {
     return _checkIndex(() {
       var tableName = sqlIndexViewName;
       var columns = [primaryKeyColumnName];
@@ -259,7 +275,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
           limit: count);
       return selectQuery.execute(transaction).then((rs) {
         return rs
-            .map((row) => decodeKey(row[primaryKeyColumnName]))
+            .map((row) => decodeKey(row[primaryKeyColumnName] as Object))
             .toList(growable: false);
       });
     });

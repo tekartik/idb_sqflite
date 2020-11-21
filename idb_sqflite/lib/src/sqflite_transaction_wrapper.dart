@@ -10,7 +10,7 @@ class SqfliteTransactionWrapper {
   SqfliteTransactionWrapper(this.sqfliteDatabase) {
     () async {
       try {
-        await sqfliteDatabase.transaction((txn) async {
+        await sqfliteDatabase!.transaction((txn) async {
           if (debugTransactionWrapper) {
             _log('Transaction ready');
           }
@@ -19,7 +19,7 @@ class SqfliteTransactionWrapper {
 
           // Cancel the transaction if aborted
           if (completedException != null) {
-            throw completedException;
+            throw completedException!;
           }
         });
         if (debugTransactionWrapper) {
@@ -42,20 +42,20 @@ class SqfliteTransactionWrapper {
     }
   }
 
-  void _completeError(e, [StackTrace st]) {
+  void _completeError(Object e, [StackTrace? st]) {
     if (!_completer.isCompleted) {
       _completer.completeError(e, st);
     }
   }
 
-  final sqflite.Database sqfliteDatabase;
+  final sqflite.Database? sqfliteDatabase;
 
   final _transactionReadyCompleter = Completer<sqflite.Transaction>.sync();
   final _operationsCompleter = Completer<bool>.sync();
 
   Future<sqflite.Transaction> get sqfliteTransaction =>
       _transactionReadyCompleter.future;
-  Exception completedException;
+  Exception? completedException;
 
   /*
   SqlDatabase _database;
@@ -120,7 +120,7 @@ class SqfliteTransactionWrapper {
     return _completer.future;
   }
 
-  int _operationCount = 0;
+  int? _operationCount = 0;
 
   Future<T> run<T>(Future<T> Function(sqflite.Transaction) action) async {
     beginOperation();
@@ -132,21 +132,21 @@ class SqfliteTransactionWrapper {
     }
   }
 
-  Future<List<Map<String, dynamic>>> rawQuery(String sql,
-          [List<dynamic> arguments]) =>
-      run((txn) => txn.rawQuery(sql, arguments));
+  Future<List<Map<String, Object?>>> rawQuery(String sql,
+          [List<dynamic>? arguments]) =>
+      run((txn) => txn.rawQuery(sql, arguments as List<Object>?));
 
   void beginOperation() {
     if (_operationCount == null) {
       throw IdbDatabaseErrorSqflite('TransactionInactiveError');
     }
-    _operationCount++;
+    _operationCount = _operationCount! + 1;
     // idbDevPrint('_beginOperation $_operationCount');
   }
 
   void endOperation() {
     // idbDevPrint('_endOperation $_operationCount');
-    --_operationCount;
+    _operationCount = _operationCount! - 1;
 
     // Make it breath
     asyncCompleteOperationsIfDone();

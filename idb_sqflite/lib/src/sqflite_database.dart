@@ -20,20 +20,20 @@ String sanitizeDbName(String name) => name;
 
 class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
   IdbVersionChangeEventSqflite(
-      IdbDatabaseSqflite database, int oldVersion, this.newVersion) //
+      IdbDatabaseSqflite database, int? oldVersion, this.newVersion) //
       : oldVersion = oldVersion ?? 0 {
     // handle = too to catch programatical errors
     if (this.oldVersion >= newVersion) {
       throw StateError('cannot downgrade from $oldVersion to $newVersion');
     }
-    request = OpenDBRequest(database, database.versionChangeTransaction);
+    request = OpenDBRequest(database, database.versionChangeTransaction!);
   }
 
   @override
   final int oldVersion;
   @override
   final int newVersion;
-  Request request;
+  late Request request;
 
   @override
   Object get target => request;
@@ -56,7 +56,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     meta.name = name;
   }
 
-  IdbTransactionSqflite versionChangeTransaction;
+  IdbTransactionSqflite? versionChangeTransaction;
 
   sqflite.DatabaseFactory get sqfliteDatabaseFactory =>
       (super.factory as IdbFactorySqflite).sqfliteDatabaseFactory;
@@ -64,7 +64,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   @override
   IdbDatabaseMeta meta = IdbDatabaseMeta();
 
-  sqflite.Database sqlDb;
+  sqflite.Database? sqlDb;
 
   Future applySchemaChanges(IdbOpenTransactionSqflite tx) async {
     final txnMeta = tx.meta
@@ -72,9 +72,9 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     Future createIndecies() async {
       for (var storeName in txnMeta.createdIndexes.keys) {
-        var store = versionChangeTransaction.objectStore(storeName)
+        var store = versionChangeTransaction!.objectStore(storeName)
             as IdbObjectStoreSqflite;
-        var indexMetas = txnMeta.createdIndexes[storeName];
+        var indexMetas = txnMeta.createdIndexes[storeName]!;
         for (var indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
           await index.create();
@@ -89,13 +89,13 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                   valueColumnName
                 ]);
             if (rows.isNotEmpty) {
-              await versionChangeTransaction.batch((batch) {
+              await versionChangeTransaction!.batch((batch) {
                 for (var row in rows) {
                   var value = decodeValue(row[valueColumnName]);
                   if (value is Map) {
                     var keyValue = mapValueAtKeyPath(value, index.keyPath);
                     index.insertKeyBatch(
-                        batch, (row[primaryIdColumnName]) as int, keyValue);
+                        batch, (row[primaryIdColumnName]) as int?, keyValue);
                   }
                 }
               });
@@ -107,37 +107,37 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     Future removeDeletedIndecies() async {
       for (var storeName in txnMeta.deletedIndexes.keys) {
-        var store = versionChangeTransaction.objectStore(storeName)
+        var store = versionChangeTransaction!.objectStore(storeName)
             as IdbObjectStoreSqflite;
-        var indexMetas = txnMeta.deletedIndexes[storeName];
+        var indexMetas = txnMeta.deletedIndexes[storeName]!;
         for (var indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
-          await versionChangeTransaction.batch(index.drop);
+          await versionChangeTransaction!.batch(index.drop);
         }
       }
     }
 
     Future createObjectStores() async {
       for (var storeMeta in txnMeta.createdStores) {
-        var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
+        var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
         await store.create();
       }
     }
 
     Future updateObjectStores() async {
       for (var storeMeta in txnMeta.updatedStores) {
-        var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
+        var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
         await store.update();
       }
     }
 
     Future removeDeletedObjectStores() async {
       for (var storeMeta in txnMeta.deletedStores) {
-        var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
-        await store.deleteTable(versionChangeTransaction);
+        var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
+        await store.deleteTable(versionChangeTransaction!);
         var sqlDelete = 'DELETE FROM $storesTable WHERE name = ?';
         var sqlArgs = [store.name];
-        await versionChangeTransaction.execute(sqlDelete, sqlArgs);
+        await versionChangeTransaction!.execute(sqlDelete, sqlArgs);
       }
     }
 
@@ -164,7 +164,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     txnMeta.updatedStores.clear();
   }
 
-  Future _upgrade(IdbTransactionSqflite tx, int oldVersion, int newVersion,
+  Future _upgrade(IdbTransactionSqflite tx, int? oldVersion, int newVersion,
       FutureOr<void> Function(VersionChangeEvent event) onUpgradeNeeded) async {
     versionChangeTransaction = tx;
     try {
@@ -179,8 +179,8 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     }
   }
 
-  Future open(int newVersion, OnUpgradeNeededFunction onUpgradeNeeded) async {
-    int oldVersion;
+  Future open(int? newVersion, OnUpgradeNeededFunction? onUpgradeNeeded) async {
+    int? oldVersion;
 
     /// Open the sqflite database
     /// When done oldVersion is initialized
@@ -192,7 +192,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
         await db.execute(
             'CREATE TABLE $versionTable ($versionField INT, $signatureField TEXT)');
-        await db.insert(versionTable, <String, dynamic>{
+        await db.insert(versionTable, <String, Object?>{
           versionField: 0,
           signatureField: internalSignature
         });
@@ -226,7 +226,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                     if (signature != internalSignature) {
                       throw 'unexpected signature $signature';
                     }
-                    oldVersion = row[versionField] as int;
+                    oldVersion = row[versionField] as int?;
                     if (oldVersion == null) {
                       throw 'null version';
                     }
@@ -261,7 +261,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
       //print('$oldVersion vs $newVersion');
       if (oldVersion != newVersion) {
-        if (oldVersion > newVersion) {
+        if (oldVersion! > newVersion!) {
           // cannot downgrade
           throw StateError('cannot downgrade from $oldVersion to $newVersion');
         } else {
@@ -282,7 +282,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
               try {
                 transaction.meta = meta.versionChangeTransaction;
                 await _upgrade(
-                    transaction, oldVersion, newVersion, onUpgradeNeeded);
+                    transaction, oldVersion, newVersion!, onUpgradeNeeded);
               } finally {
                 transaction.meta = oldMeta;
               }
@@ -314,11 +314,11 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
   @override
   ObjectStore createObjectStore(String name,
-      {String keyPath, bool autoIncrement = false}) {
+      {String? keyPath, bool? autoIncrement = false}) {
     var storeMeta = IdbObjectStoreMeta(name, keyPath, autoIncrement);
     meta.createObjectStore(storeMeta);
 
-    var store = IdbObjectStoreSqflite(versionChangeTransaction, storeMeta);
+    var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
     return store;
   }
 
@@ -328,7 +328,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
         await transaction.query(storesTable, columns: [nameField, metaField]);
     list.forEach((row) {
       var map =
-          (jsonDecode(row['meta'] as String) as Map)?.cast<String, dynamic>();
+          (jsonDecode(row['meta'] as String) as Map).cast<String, Object?>();
       var storeMeta = IdbObjectStoreMeta.fromMap(map);
       meta.putObjectStore(storeMeta);
     });
@@ -356,7 +356,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
   // Only created when we asked for it
   // singleton
-  StreamController<VersionChangeEvent> onVersionChangeCtlr;
+  StreamController<VersionChangeEvent>? onVersionChangeCtlr;
 
   @override
   Stream<VersionChangeEvent> get onVersionChange {
@@ -367,6 +367,6 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     // sync needed in testing to make sure we receive the onCloseEvent before the
     // new database is actually open (test: websql database one keep open then one)
     onVersionChangeCtlr = StreamController(sync: true);
-    return onVersionChangeCtlr.stream;
+    return onVersionChangeCtlr!.stream;
   }
 }

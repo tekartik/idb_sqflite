@@ -18,10 +18,10 @@ void devPrint(Object object) {
 @deprecated
 T devWarning<T>(T value) => value;
 
-void _devError([Object msg]) {
+void _devError([Object? msg]) {
   // one day remove the print however sometimes the error thrown is hidden
   try {
-    throw UnsupportedError(msg?.toString());
+    throw UnsupportedError(msg?.toString() ?? 'error');
   } catch (e, st) {
     if (_devPrintEnabled) {
       print('# ERROR $msg');
@@ -32,4 +32,4 @@ void _devError([Object msg]) {
 }
 
 @deprecated
-void devError([String msg]) => _devError(msg);
+void devError([String? msg]) => _devError(msg);
