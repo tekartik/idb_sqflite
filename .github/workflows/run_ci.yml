@@ -9,6 +9,7 @@ jobs:
       run:
         working-directory: ./idb_sqflite_support
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         flutter: [stable, beta, dev]
