@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:dev_test/package.dart';
 import 'package:process_run/shell.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:path/path.dart';
 
 Future main() async {
   final nnbdEnabled = dartVersion > Version(2, 12, 0, pre: '0');
@@ -17,7 +18,7 @@ Future main() async {
       'idb_sqflite',
       'idb_sqflite_common_test',
     ]) {
-      await packageRunCi('../$dir');
+      await packageRunCi(join('..', dir));
     }
   } else {
     stderr.writeln('ci test skipped for $dartVersion');
