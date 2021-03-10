@@ -9,16 +9,13 @@ class IdbErrorSqflite extends DatabaseError {
 
   @override
   String toString() {
-    var text = 'IdbErrorSqflite($errorCode)';
-    if (message != null) {
-      text += ': $message';
-    }
+    var text = 'IdbErrorSqflite($errorCode): $message';
     return text;
   }
 }
 
 class IdbDatabaseErrorSqflite extends DatabaseError {
-  IdbDatabaseErrorSqflite(this._nativeError) : super(null);
+  IdbDatabaseErrorSqflite(this._nativeError) : super('native');
 
   final _nativeError;
 
@@ -46,10 +43,7 @@ Future<T> catchAsyncSqfliteError<T>(Future<T> Function() action) async {
   try {
     return await action();
   } catch (e) {
-    if (!_handleError(e)) {
-      rethrow;
-    }
-    // We should never get there
-    return null;
+    _handleError(e);
+    rethrow;
   }
 }

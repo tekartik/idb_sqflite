@@ -30,15 +30,15 @@ class IdbTransactionSqflite extends IdbTransactionBase
 
   // Change during onVersionChanged
   @override
-  IdbTransactionMeta meta;
-  SqfliteTransactionWrapper _txn;
+  IdbTransactionMeta? meta;
+  late SqfliteTransactionWrapper _txn;
   // Use for aborted
 
   IdbDatabaseSqflite get idbDatabaseSqflite => database as IdbDatabaseSqflite;
 
   @override
   ObjectStore objectStore(String name) {
-    meta.checkObjectStore(name);
+    meta!.checkObjectStore(name);
     return IdbObjectStoreSqflite(
         this, idbDatabaseSqflite.meta.getObjectStore(name));
   }
@@ -54,18 +54,18 @@ class IdbTransactionSqflite extends IdbTransactionBase
   @override
   Future<Database> get completed => _txn.completed.then((_) => database);
 
-  Future execute(String sql, [List<dynamic> arguments]) =>
-      _txn.run((txn) => txn.execute(sql, arguments));
+  Future execute(String sql, [List<dynamic>? arguments]) =>
+      _txn.run((txn) => txn.execute(sql, arguments as List<Object>?));
 
-  Future<int> insert(String table, Map<String, dynamic> values) =>
+  Future<int> insert(String table, Map<String, Object?> values) =>
       _txn.run((txn) => txn.insert(table, values));
 
-  Future<List<Map<String, dynamic>>> query(String table,
-          {List<String> columns,
-          String where,
-          List<dynamic> whereArgs,
-          String orderBy,
-          int limit}) =>
+  Future<List<Map<String, Object?>>> query(String table,
+          {List<String>? columns,
+          String? where,
+          List<Object>? whereArgs,
+          String? orderBy,
+          int? limit}) =>
       _txn.run((txn) => txn.query(table,
           columns: columns,
           where: where,
@@ -73,15 +73,16 @@ class IdbTransactionSqflite extends IdbTransactionBase
           limit: limit,
           orderBy: orderBy));
 
-  Future<int> update(String table, Map<String, dynamic> values,
-          {String where, List<dynamic> whereArgs}) =>
+  Future<int> update(String table, Map<String, Object?> values,
+          {String? where, List<Object>? whereArgs}) =>
       _txn.run((txn) =>
           txn.update(table, values, where: where, whereArgs: whereArgs));
 
-  Future<List<Map<String, dynamic>>> rawQuery(String sqlSelect, List args) =>
+  Future<List<Map<String, Object?>>> rawQuery(
+          String sqlSelect, List<Object>? args) =>
       _txn.run((txn) => txn.rawQuery(sqlSelect, args));
 
-  Future<int> delete(String table, {String where, List<dynamic> whereArgs}) =>
+  Future<int> delete(String table, {String? where, List<Object>? whereArgs}) =>
       _txn.run((txn) => txn.delete(table, where: where, whereArgs: whereArgs));
 
   Future<List<dynamic>> batch(void Function(sqflite.Batch batch) prepare) =>
@@ -96,5 +97,5 @@ class IdbTransactionSqflite extends IdbTransactionBase
     _txn.abort();
   }
 
-  Exception get endException => _txn.completedException;
+  Exception? get endException => _txn.completedException;
 }

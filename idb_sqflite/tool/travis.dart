@@ -5,10 +5,9 @@ Future<void> main() async {
 
   await shell.run('''
 
-dartanalyzer --fatal-warnings --fatal-infos .
-dartfmt -n --set-exit-if-changed .
+dart analyze --fatal-warnings --fatal-infos .
+dart format -o none --set-exit-if-changed .
 
-pub run test -p vm -j 1
-
+dart test
 ''');
 }

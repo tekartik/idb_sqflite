@@ -34,7 +34,7 @@ void main() {
   });
 
   testWidgets('io', (WidgetTester tester) async {
-    getIdbFactorySqflite(null);
+    getIdbFactorySqflite(databaseFactory);
 
     try {
       idbFactorySembastIo;

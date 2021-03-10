@@ -13,54 +13,54 @@ import 'package:idb_sqflite/src/sqflite_value.dart';
 
 abstract class IdbRecordSnapshotSqflite {
   IdbRecordSnapshotSqflite(this.row);
-  final Map<String, dynamic> row;
+  final Map<String, Object?> row;
 
-  dynamic get key;
-  dynamic get primaryKey => decodeKey(row[primaryKeyColumnName]);
+  Object get key;
+  Object get primaryKey => decodeKey(row[primaryKeyColumnName]!);
 
-  dynamic get value => fromSqfliteValue(decodeValue(row[valueColumnName]));
+  Object get value => fromSqfliteValue(decodeValue(row[valueColumnName])!);
 }
 
 class IdbStoreRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
-  IdbStoreRecordSnapshotSqflite(Map<String, dynamic> row) : super(row);
+  IdbStoreRecordSnapshotSqflite(Map<String, Object?> row) : super(row);
 
   @override
-  dynamic get key => primaryKey;
+  Object get key => primaryKey;
 }
 
 class IdbIndexRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
   IdbIndexRecordSnapshotSqflite(
-      this.key, this._primaryKey, Map<String, dynamic> row)
+      this.key, this._primaryKey, Map<String, Object?> row)
       : super(row);
-  final dynamic _primaryKey;
+  final Object? _primaryKey;
   @override
-  dynamic get primaryKey => _primaryKey ?? decodeKey(row[primaryKeyColumnName]);
+  Object get primaryKey => _primaryKey ?? decodeKey(row[primaryKeyColumnName]!);
 
   @override
-  final dynamic key;
+  final Object key;
 }
 
-dynamic _keyValue(Map<String, dynamic> map, dynamic columnOrColumns) {
+Object _keyValue(Map<String, Object?> map, dynamic columnOrColumns) {
   if (columnOrColumns is Iterable) {
     var list = <dynamic>[];
     for (var column in columnOrColumns) {
-      list.add(decodeKey(map[column as String]));
+      list.add(decodeKey(map[column as String]!));
     }
     return list;
   } else {
-    return decodeKey(map[columnOrColumns]);
+    return decodeKey(map[columnOrColumns]!);
   }
 }
 
 abstract class _IdbCommonCursorSqflite<T extends Cursor> {
-  IdbRecordSnapshotSqflite snapshot;
-  _IdbCursorBaseControllerSqflite<T> _ctlr;
+  late IdbRecordSnapshotSqflite snapshot;
+  late _IdbCursorBaseControllerSqflite<T> _ctlr;
 
   List<String> get keyColumnNames => _ctlr.keyColumnNames;
 
-  dynamic get key => snapshot.key;
+  Object get key => snapshot.key;
 
-  dynamic get primaryKey => snapshot.primaryKey;
+  Object get primaryKey => snapshot.primaryKey;
 
   String get direction => _ctlr.direction;
 
@@ -68,27 +68,27 @@ abstract class _IdbCommonCursorSqflite<T extends Cursor> {
     _ctlr.advance(count);
   }
 
-  void next([Object key]) {
+  void next([Object? key]) {
     if (key != null) {
       throw UnimplementedError();
     }
     advance(1);
   }
 
-  Future update(value) async {
+  Future<void> update(Object value) async {
     value = toSqfliteValue(value);
     await _ctlr.store.putImpl(value, primaryKey);
     // Index only handle
     if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
       // Also update all records in the current list...
-      var i = _ctlr.currentIndex + 1;
+      var i = _ctlr.currentIndex! + 1;
       while (i < _ctlr._rows.length) {
         if (_ctlr._rows[i].primaryKey == primaryKey) {
           // We know it is an index cursor
           _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
               _ctlr._rows[i].key,
               primaryKey,
-              <String, dynamic>{valueColumnName: encodeValue(value)});
+              <String, Object?>{valueColumnName: encodeValue(value)});
           i++;
         }
         i++;
@@ -100,7 +100,7 @@ abstract class _IdbCommonCursorSqflite<T extends Cursor> {
     await _ctlr.store.deleteImpl(primaryKey);
     // Index only handle
     if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
-      var i = _ctlr.currentIndex + 1;
+      var i = _ctlr.currentIndex! + 1;
       while (i < _ctlr._rows.length) {
         if (_ctlr._rows[i].primaryKey == primaryKey) {
           _ctlr._rows.removeAt(i);
@@ -140,7 +140,7 @@ class _IdbCursorWithValueSqflite extends CursorWithValue
 }
 
 /// Check open cursor arguments
-void checkOpenCursorArguments(dynamic key, KeyRange range) {
+void checkOpenCursorArguments(dynamic key, KeyRange? range) {
   if (key is KeyRange) {
     throw ArgumentError(
         'Invalid keyRange $key as key argument, use the range argument');
@@ -149,18 +149,15 @@ void checkOpenCursorArguments(dynamic key, KeyRange range) {
 
 abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
     implements _IdbControllerSqflite {
-  _IdbCursorBaseControllerSqflite(this.direction, this.autoAdvance) {
-    direction ??= idbDirectionNext;
-    autoAdvance ??= false;
-  }
+  _IdbCursorBaseControllerSqflite(this.direction, this.autoAdvance);
 
   String direction;
   bool autoAdvance;
 
   @override
-  int currentIndex;
+  int? currentIndex;
   @override
-  List<IdbRecordSnapshotSqflite> _rows;
+  late List<IdbRecordSnapshotSqflite> _rows;
 
   IdbTransactionSqflite get transaction => store.transaction;
 
@@ -176,13 +173,13 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
   bool get currentIndexValid {
     var length = _rows.length;
 
-    return (currentIndex >= 0) && (currentIndex < length);
+    return (currentIndex! >= 0) && (currentIndex! < length);
   }
 
   /// false if it faield
   bool advance(int count) {
     //int length = rows.length;
-    currentIndex += count;
+    currentIndex = currentIndex! + count;
     if (!currentIndexValid) {
       // Prevent auto advance
       autoAdvance = false;
@@ -210,7 +207,7 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
   Stream<T> get stream => _ctlr.stream;
 
   /// Set the result from query, this will trigger the controller
-  set rows(List<Map<String, dynamic>> rows);
+  set rows(List<Map<String, Object?>> rows);
 }
 
 abstract class _IdbKeyCursorBaseControllerSqflite
@@ -219,7 +216,7 @@ abstract class _IdbKeyCursorBaseControllerSqflite
       : super(direction, autoAdvance);
 
   @override
-  Cursor get newCursor => _IdbCursorSqflite(this, _rows[currentIndex]);
+  Cursor get newCursor => _IdbCursorSqflite(this, _rows[currentIndex!]);
 }
 
 abstract class _IdbCursorWithValueBaseControllerSqflite
@@ -229,7 +226,7 @@ abstract class _IdbCursorWithValueBaseControllerSqflite
 
   @override
   CursorWithValue get newCursor =>
-      _IdbCursorWithValueSqflite(this, _rows[currentIndex]);
+      _IdbCursorWithValueSqflite(this, _rows[currentIndex!]);
 }
 
 class IdbCursorWithValueControllerSqflite
@@ -254,8 +251,8 @@ mixin _IdbCursorWithValueCommonControllerSqflite
 }
 
 abstract class _IdbControllerSqflite {
-  int get currentIndex;
-  set currentIndex(int currentIndex);
+  int? get currentIndex;
+  set currentIndex(int? currentIndex);
   set _rows(List<IdbRecordSnapshotSqflite> _rows);
   void _autoNext();
 }
@@ -265,7 +262,7 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
 
   IdbTransactionSqflite get transaction;
 
-  set rows(List<Map<String, dynamic>> rows);
+  set rows(List<Map<String, Object?>> rows);
 
   // to override
   List<String> get columns;
@@ -277,7 +274,7 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
 
   String get sqlTableName;
 
-  Future execute(key, KeyRange keyRange) {
+  Future execute(key, KeyRange? keyRange) {
     var keyOrKeyRange;
     if (key != null) {
       keyOrKeyRange = key;
@@ -306,7 +303,7 @@ mixin IdbStoreCursorCommonControllerSqflite
   List<String> get keyColumnNames => [primaryKeyColumnName];
 
   @override
-  set rows(List<Map<String, dynamic>> rows) {
+  set rows(List<Map<String, Object?>> rows) {
     currentIndex = -1;
     _rows = rows.map((row) => IdbStoreRecordSnapshotSqflite(row)).toList();
     _autoNext();
@@ -315,7 +312,7 @@ mixin IdbStoreCursorCommonControllerSqflite
 
 mixin _IdbIndexCursorCommonControllerSqflite
     on _IdbCursorCommonControllerSqflite {
-  IdbIndexSqflite index;
+  late IdbIndexSqflite index;
 
   @override
   IdbObjectStoreSqflite get store => index.store;
@@ -327,7 +324,7 @@ mixin _IdbIndexCursorCommonControllerSqflite
   String get sqlTableName => index.sqlIndexViewName;
 
   @override
-  set rows(List<Map<String, dynamic>> rows) {
+  set rows(List<Map<String, Object?>> rows) {
     currentIndex = -1;
     _rows = rows
         .map((row) => IdbIndexRecordSnapshotSqflite(

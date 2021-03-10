@@ -7,8 +7,8 @@ import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:sqflite_common/utils/utils.dart';
 
 class SqfliteQuery {
-  String sqlStatement;
-  List<Object> arguments;
+  late String sqlStatement;
+  List<Object>? arguments;
 }
 
 const String _sqlCountColumnName = '_COUNT';
@@ -25,13 +25,13 @@ class SqfliteSelectQuery extends SqfliteQuery {
   List<String> columns;
   final String _sqlTableName;
   var keyOrKeyRange;
-  final String _direction;
+  final String? _direction;
   List<String> keyColumns;
-  final int limit;
+  final int? limit;
 
-  Future<List<Map<String, dynamic>>> execute(
-      IdbTransactionSqflite transaction) {
-    String order;
+  Future<List<Map<String, Object?>>> execute(
+      IdbTransactionSqflite? transaction) {
+    String? order;
 
     if (_direction != null) {
       switch (_direction) {
@@ -46,18 +46,18 @@ class SqfliteSelectQuery extends SqfliteQuery {
           throw ArgumentError("direction '$_direction' not supported");
       }
     }
-    var args = [];
+    var args = <Object>[];
     var sb = StringBuffer();
 
     if (keyOrKeyRange is KeyRange) {
       var keyRange = keyOrKeyRange as KeyRange;
 
       var lowers = valueAsList(keyRange.lower)
-          ?.map((key) => encodeKey(key))
-          ?.toList(growable: false);
+          ?.map((key) => encodeKey(key as Object))
+          .toList(growable: false);
       var uppers = valueAsList(keyRange.upper)
-          ?.map((key) => encodeKey(key))
-          ?.toList(growable: false);
+          ?.map((key) => encodeKey(key as Object))
+          .toList(growable: false);
       assert(lowers == null || lowers.length == keyColumns.length);
       assert(uppers == null || uppers.length == keyColumns.length);
 
@@ -127,13 +127,13 @@ class SqfliteSelectQuery extends SqfliteQuery {
         }
       }
     } else if (keyOrKeyRange != null) {
-      var keys = valueAsList(keyOrKeyRange);
+      var keys = valueAsList(keyOrKeyRange)!;
       // We're missing some keys, make it false
       if (keys.length != keyColumns.length) {
         sb.write('1 = 0');
       } else {
         sb.write('${keyColumns.map((column) => '$column = ?').join(' AND ')}');
-        args.addAll(keys.map((key) => encodeKey(key)));
+        args.addAll(keys.map((key) => encodeKey(key as Object)));
       }
     } else {
       // Not null needed for index key
@@ -144,12 +144,12 @@ class SqfliteSelectQuery extends SqfliteQuery {
     }
 
     // order not needed for COUNT(*)
-    String orderBy;
+    String? orderBy;
     if (order != null) {
       orderBy = keyColumns.map((column) => '$column $order').join(', ');
     }
     //var sqlArgs = [encodeKey(key)];
-    return transaction.query(_sqlTableName,
+    return transaction!.query(_sqlTableName,
         columns: columns,
         where: sb.isEmpty ? null : sb.toString(),
         whereArgs: args,
@@ -169,8 +169,8 @@ class SqfliteCountQuery extends SqfliteSelectQuery {
           null,
         );
 
-  Future<int> count(IdbTransactionSqflite transaction) async {
+  Future<int> count(IdbTransactionSqflite? transaction) async {
     var rows = await execute(transaction);
-    return firstIntValue(rows);
+    return firstIntValue(rows)!;
   }
 }

@@ -11,7 +11,7 @@ class SqfliteGlobalStore {
 
   var dbName = globalStoreDbName;
 
-  sqflite.Database _database;
+  sqflite.Database? _database;
   Future<sqflite.Database> get database async => _database ??= await () async {
         return sqfliteDatabaseFactory.openDatabase(dbName,
             options: sqflite.OpenDatabaseOptions(

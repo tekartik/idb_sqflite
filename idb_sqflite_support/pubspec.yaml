@@ -16,5 +16,6 @@ dev_dependencies:
       ref: dart2
     version: '>=0.1.0'
   process_run: '>=0.10.1'
+  dev_test:
 
 

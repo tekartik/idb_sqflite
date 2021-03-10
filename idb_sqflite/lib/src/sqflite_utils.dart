@@ -20,7 +20,7 @@ String keyIndexToKeyName(int index) => '$keyColumnName${index + 1}';
 const sqliteRowId = 'rowid';
 
 /// Returns always a list unless null
-List itemOrItemsToList(itemOrItems) {
+List? itemOrItemsToList(itemOrItems) {
   if (itemOrItems == null) {
     return null;
   }
