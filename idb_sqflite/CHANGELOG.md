@@ -2,7 +2,7 @@
 
 * `nnbd` support, breaking change
 
-## 0.3.2+1
+## 0.3.2+2
 
 * Add support for `Transaction.abort`
 

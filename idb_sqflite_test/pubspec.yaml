@@ -20,8 +20,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  idb_shim: '>=1.10.3-dev.2 <3.0.0'
-  idb_sqflite: '>=0.1.0+4 <2.0.0'
+  idb_shim: '>=1.10.3-dev.2 <2.0.0-0'
+  idb_sqflite: '>=0.1.0+4 <2.0.0-0'
 
 dev_dependencies:
   flutter_test:
