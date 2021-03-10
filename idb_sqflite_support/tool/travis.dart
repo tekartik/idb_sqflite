@@ -13,6 +13,7 @@ Future main() async {
     for (var dir in [
       'idb_sqflite',
       'idb_sqflite_common_test',
+      'idb_sqflite_test_app',
     ]) {
       shell = shell.pushd(dir);
       await shell.run('''

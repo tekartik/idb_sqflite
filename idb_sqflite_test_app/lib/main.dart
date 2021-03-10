@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'io/idb_io.dart' if (dart.library.html) 'web/idb_web.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   var bloc = MyAppBloc();
   runApp(MyApp(
     bloc: bloc,
@@ -21,7 +22,7 @@ class MyAppBloc {
       var db = await database;
       var txn = db.transaction(storeName, idbModeReadOnly);
       var store = txn.objectStore(storeName);
-      _value = ((await store.getObject(valueKey)) as int) ?? 0;
+      _value = ((await store.getObject(valueKey)) as int?) ?? 0;
       _counterController.add(_value);
     }();
   }
@@ -35,17 +36,18 @@ class MyAppBloc {
     return db;
   }();
 
-  int _value;
-  final _counterController = StreamController<int>.broadcast();
+  int? _value;
+  final StreamController<int?> _counterController =
+      StreamController<int>.broadcast();
 
-  Stream<int> get counter => _counterController.stream;
+  Stream<int?> get counter => _counterController.stream;
 
   Future increment() async {
-    _value++;
+    _value = _value! + 1;
     var db = await database;
     var txn = db.transaction(storeName, idbModeReadWrite);
     var store = txn.objectStore(storeName);
-    await store.put(_value, valueKey);
+    await store.put(_value!, valueKey);
     _counterController.add(_value);
   }
 }
@@ -53,7 +55,7 @@ class MyAppBloc {
 class MyApp extends StatelessWidget {
   final MyAppBloc bloc;
 
-  const MyApp({Key key, @required this.bloc}) : super(key: key);
+  const MyApp({Key? key, required this.bloc}) : super(key: key);
 
   // This widget is the root of your application.
   @override
@@ -83,7 +85,7 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   final MyAppBloc bloc;
 
-  MyHomePage({Key key, this.title, @required this.bloc}) : super(key: key);
+  MyHomePage({Key? key, this.title, required this.bloc}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -94,7 +96,7 @@ class MyHomePage extends StatefulWidget {
   // used by the build method of the State. Fields in a Widget subclass are
   // always marked "final".
 
-  final String title;
+  final String? title;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -103,7 +105,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<int>(
+    return StreamBuilder<int?>(
         stream: widget.bloc.counter,
         builder: (context, snapshot) {
           var count = snapshot.data;
@@ -111,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
             appBar: AppBar(
               // Here we take the value from the MyHomePage object that was created by
               // the App.build method, and use it to set our appbar title.
-              title: Text(widget.title),
+              title: Text(widget.title!),
             ),
             body: Center(
               child: Column(

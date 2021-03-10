@@ -17,6 +17,7 @@ Future main() async {
     for (var dir in [
       'idb_sqflite',
       'idb_sqflite_common_test',
+      'idb_sqflite_test_app',
     ]) {
       await packageRunCi(join('..', dir));
     }

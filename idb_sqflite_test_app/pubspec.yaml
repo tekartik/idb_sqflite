@@ -1,4 +1,4 @@
-name: idb_sqflite_test
+name: idb_sqflite_test_app
 description: Indexeddb sqflite test
 
 # The following defines the version and build number for your application.
@@ -14,35 +14,26 @@ description: Indexeddb sqflite test
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.10.0-0 <3.0.0"
+  sdk: '>=2.12.0-0 <3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
-  idb_shim: '>=1.10.3-dev.2 <2.0.0-0'
-  idb_sqflite: '>=0.1.0+4 <2.0.0-0'
+  idb_shim:
+  idb_sqflite:
+  sqflite:
+  sqflite_common_ffi:
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_driver:
-    sdk: flutter
-  sqflite_test:
-    git:
-      url: git://github.com/tekartik/sqflite_more
-      ref: dart2
-      path: sqflite_test
-    version: '>=0.2.2'
-  sqflite_ffi_test:
-    git:
-      url: git://github.com/tekartik/sqflite_more
-      ref: dart2
-      path: sqflite_ffi_test
-    version: '>=0.2.4'
-  process_run: '>=0.10.1'
+  # flutter_driver:
+  #  sdk: flutter
+  process_run: '>=0.12.0-0'
   dev_test: '>=0.13.1+1'
   pedantic: '>=1.4.0'
+
 dependency_overrides:
   idb_sqflite:
     path: ../idb_sqflite
