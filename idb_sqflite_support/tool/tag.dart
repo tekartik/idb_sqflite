@@ -10,7 +10,7 @@ Future main() async {
   var version = Version.parse((loadYaml(
           await File(join('..', 'idb_sqflite', 'pubspec.yaml'))
               .readAsString()) as Map)['version']
-      ?.toString());
+      .toString());
   print('Version $version');
   print('Tap anything or CTRL-C: $version');
 

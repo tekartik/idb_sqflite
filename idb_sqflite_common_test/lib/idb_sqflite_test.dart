@@ -2,7 +2,6 @@ import 'package:idb_shim/idb_client.dart';
 import 'package:idb_sqflite/idb_sqflite.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_test/idb_test_common.dart';
-import 'package:test/test.dart';
 
 void defineTests(IdbFactory? factory) {
   group('impl', () {

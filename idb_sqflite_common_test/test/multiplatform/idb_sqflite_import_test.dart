@@ -1,5 +1,4 @@
 import 'package:idb_shim/idb_io.dart';
-import 'package:idb_shim/idb_shim.dart' hide Database;
 import 'package:idb_sqflite/idb_sqflite.dart' hide Database;
 import 'package:idb_sqflite/src/env_utils.dart';
 import 'package:sqflite_common/sqlite_api.dart';
