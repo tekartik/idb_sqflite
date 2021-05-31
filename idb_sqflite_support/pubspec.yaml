@@ -6,14 +6,14 @@ author: alex <alex@tekartik.com>
 publish_to: none
 
 environment:
-  sdk: '>=2.7.0-dev <3.0.0'
+  sdk: '>=2.12.0 <3.0.0'
 
 dev_dependencies:
   pedantic: '>=1.4.0 <3.0.0'
   tekartik_travis_ci_flutter:
     git:
       url: git://github.com/tekartik/travis_ci_flutter.dart
-      ref: dart2
+      ref: null_safety
     version: '>=0.1.0'
   process_run: '>=0.10.1'
   dev_test:

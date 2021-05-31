@@ -2,8 +2,6 @@
 import 'dart:async';
 
 import 'package:idb_shim/idb.dart';
-import 'package:idb_shim/src/common/common_meta.dart';
-import 'package:idb_shim/src/common/common_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
