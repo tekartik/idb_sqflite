@@ -4,7 +4,7 @@ homepage: https://github.com/tekartik/idb_sqflite/tree/master/idb_sqflite
 version: 1.0.0
 
 environment:
-  sdk: '>=2.12.0-0 <3.0.0'
+  sdk: '>=2.14.0 <3.0.0'
 
 dependencies:
   idb_shim: '>=2.0.0 <4.0.0'
@@ -15,4 +15,4 @@ dev_dependencies:
   sqflite_common_ffi: '>=2.0.0'
   test: '>=1.16.2'
   process_run: '>=0.12.0'
-  pedantic: '>=1.10.0'
+  lints: '>=1.0.1'

@@ -1,4 +1,4 @@
-// ignore_for_file: implementation_imports
+// ignore_for_file: implementation_imports, unnecessary_string_interpolations
 
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_shim/src/common/common_value.dart';
@@ -24,7 +24,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
       {this.limit});
   List<String> columns;
   final String _sqlTableName;
-  var keyOrKeyRange;
+  Object? keyOrKeyRange;
   final String? _direction;
   List<String> keyColumns;
   final int? limit;

@@ -85,7 +85,8 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   final MyAppBloc bloc;
 
-  MyHomePage({Key? key, this.title, required this.bloc}) : super(key: key);
+  const MyHomePage({Key? key, this.title, required this.bloc})
+      : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -119,14 +120,11 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Text(
+                  const Text(
                     'You have pushed the button this many times:',
                   ),
                   if (count != null)
-                    Text('$count',
-                        style:
-                            // ignore: deprecated_member_use
-                            Theme.of(context).textTheme.display1)
+                    Text('$count', style: Theme.of(context).textTheme.headline5)
                 ],
               ),
             ),
@@ -136,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       widget.bloc.increment();
                     },
                     tooltip: 'Increment',
-                    child: Icon(Icons.add),
+                    child: const Icon(Icons.add),
                   )
                 : null,
           );

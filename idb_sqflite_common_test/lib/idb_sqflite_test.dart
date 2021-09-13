@@ -1,5 +1,6 @@
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_sqflite/idb_sqflite.dart';
+// ignore: implementation_imports
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_test/idb_test_common.dart';
 
@@ -143,9 +144,10 @@ void defineTests(IdbFactory? factory) {
           var store = txn.objectStore(testStoreName);
           var list = List.generate(count, (index) => {'value': id}).toList();
           // Put object in parallel
-          list.forEach((obj) {
+          for (var obj in list) {
+            // ignore: unawaited_futures
             store.put(obj, ++id);
-          });
+          }
           await txn.completed;
         }
 

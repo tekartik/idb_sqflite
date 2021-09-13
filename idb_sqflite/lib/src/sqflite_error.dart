@@ -17,7 +17,7 @@ class IdbErrorSqflite extends DatabaseError {
 class IdbDatabaseErrorSqflite extends DatabaseError {
   IdbDatabaseErrorSqflite(this._nativeError) : super('native');
 
-  final _nativeError;
+  final Object? _nativeError;
 
   @override
   String get message {

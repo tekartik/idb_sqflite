@@ -1,4 +1,4 @@
-// ignore_for_file: implementation_imports
+// ignore_for_file: implementation_imports, avoid_function_literals_in_foreach_calls
 import 'dart:convert';
 import 'dart:math';
 

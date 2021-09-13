@@ -1,10 +1,10 @@
 /// Development helpers to generate warning in code
 bool _devPrintEnabled = true;
 
-@deprecated
+@Deprecated('Dev only')
 set devPrintEnabled(bool enabled) => _devPrintEnabled = enabled;
 
-@deprecated
+@Deprecated('Dev only')
 void devPrint(Object object) {
   if (_devPrintEnabled) {
     print(object);
@@ -15,7 +15,7 @@ void devPrint(Object object) {
 ///
 /// Can be use as a todo for weird code. int value = devWarning(myFunction());
 /// The function is always called
-@deprecated
+@Deprecated('Dev only')
 T devWarning<T>(T value) => value;
 
 void _devError([Object? msg]) {
@@ -31,5 +31,5 @@ void _devError([Object? msg]) {
   }
 }
 
-@deprecated
+@Deprecated('Dev only')
 void devError([String? msg]) => _devError(msg);
