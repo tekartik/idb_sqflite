@@ -1,12 +1,11 @@
 # Defines a default set of lint rules enforced for
 # projects at Google. For details and rationale,
 # see https://github.com/dart-lang/pedantic#enabled-lints.
-include: package:lints/recommended.yaml
+include: package:flutter_lints/flutter.yaml
 
 analyzer:
   strong-mode:
     implicit-casts: false
-    # implicit-dynamic: false
 
   errors:
     # treat missing required parameters as a warning (not a hint)
@@ -16,6 +15,7 @@ analyzer:
     # allow having TODOs in the code
     todo: ignore
     # Ignore errors like
+    # 'super_goes_last' is a deprecated lint rule and should not be used • included_file_warning
     included_file_warning: ignore
 
 linter:
@@ -24,20 +24,15 @@ linter:
     - avoid_dynamic_calls
     - avoid_slow_async_io
     - cancel_subscriptions
-    - close_sinks
     - directives_ordering
     - no_adjacent_strings_in_list
     - omit_local_variable_types
     - package_api_docs
-    - prefer_const_constructors
     - prefer_single_quotes
     - sort_child_properties_last
-    - sort_constructors_first
-    - sort_unnamed_constructors_first
     - test_types_in_equals
     - throw_in_finally
     - unawaited_futures
     - unnecessary_null_aware_assignments
     - unnecessary_statements
     - unsafe_html
-

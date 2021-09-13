@@ -1,3 +1,7 @@
+## 1.0.1
+
+* dart 2.14 lints
+
 ## 1.0.0
 
 * `nnbd` support, breaking change

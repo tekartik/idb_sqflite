@@ -1,4 +1,4 @@
-// ignore_for_file: implementation_imports
+// ignore_for_file: implementation_imports, unnecessary_string_interpolations
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_shim/src/common/common_meta.dart';
 import 'package:idb_shim/src/common/common_validation.dart';

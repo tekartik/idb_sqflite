@@ -274,8 +274,8 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
 
   String get sqlTableName;
 
-  Future execute(key, KeyRange? keyRange) {
-    var keyOrKeyRange;
+  Future execute(Object? key, KeyRange? keyRange) {
+    Object? keyOrKeyRange;
     if (key != null) {
       keyOrKeyRange = key;
     } else if (keyRange != null) {

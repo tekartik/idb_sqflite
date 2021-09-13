@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_is_not_operator
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -30,12 +32,12 @@ Object? _toSqfliteValue(Object? value) {
     if (_looksLikeCustomType(map)) {
       return <String, Object?>{'@': map};
     }
-    var clone;
+    Map? clone;
     map.forEach((key, item) {
       var converted = _toSqfliteValue(item);
       if (!identical(converted, item)) {
         clone ??= Map<String, Object?>.from(map);
-        clone[key] = converted;
+        clone![key] = converted;
       }
     });
     return clone ?? map;
@@ -43,7 +45,7 @@ Object? _toSqfliteValue(Object? value) {
     return <String, Object?>{'@Uint8List': base64Encode(value)};
   } else if (value is List) {
     var list = value;
-    var clone;
+    List? clone;
     for (var i = 0; i < list.length; i++) {
       var item = list[i];
       var converted = _toSqfliteValue(item);
@@ -66,12 +68,14 @@ Object toSqfliteValue(Object value) {
   try {
     converted = _toSqfliteValue(value)!;
   } on ArgumentError catch (e) {
-    throw ArgumentError.value(e.invalidValue,
-        '${e.invalidValue.runtimeType} in $value', 'not supported');
+    throw ArgumentError.value(
+        e.invalidValue,
+        '${(e.invalidValue as Object?).runtimeType} in $value',
+        'not supported');
   }
 
   /// Ensure root is Map<String, Object?> if only Map
-  if (converted is Map && !(converted is Map<String, Object?>)) {
+  if (converted is Map && converted is! Map<String, Object?>) {
     converted = converted.cast<String, Object?>();
   }
   return converted;
@@ -135,8 +139,10 @@ Object fromSqfliteValue(Object value) {
   try {
     converted = _fromSqfliteValue(value)!;
   } on ArgumentError catch (e) {
-    throw ArgumentError.value(e.invalidValue,
-        '${e.invalidValue.runtimeType} in $value', 'not supported');
+    throw ArgumentError.value(
+        e.invalidValue,
+        '${(e.invalidValue as Object?).runtimeType} in $value',
+        'not supported');
   }
 
   /// Ensure root is Map<String, Object?> if only Map
