@@ -20,8 +20,8 @@ dependencies:
   idb_sqflite: '>=1.12.2-dev.1 <2.0.0'
   idb_test:
     git:
-      url: git://github.com/tekartik/idb_shim.dart
-      ref: null_safety
+      url: https://github.com/tekartik/idb_shim.dart
+      ref: dart2_3
       path: idb_test
     version: '>=0.2.1'
 
