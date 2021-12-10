@@ -1,3 +1,7 @@
+## 1.1.0
+
+* Requires dart sdk 2.15
+
 ## 1.0.1
 
 * dart 2.14 lints

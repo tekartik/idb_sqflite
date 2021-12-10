@@ -6,11 +6,9 @@
 // tree, read text, and verify that the values of widget properties are correct.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:idb_shim/idb_io.dart';
-import 'package:idb_shim/idb_shim.dart';
 import 'package:idb_sqflite/idb_sqflite.dart';
 import 'package:idb_sqflite/src/env_utils.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:test/test.dart';
 
 void main() {
   testWidgets('native', (WidgetTester tester) async {
