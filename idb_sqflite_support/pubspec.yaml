@@ -13,5 +13,8 @@ dev_dependencies:
   process_run: '>=0.10.1'
   dev_test:
   flutter_lints:
+  path:
+  pub_semver:
+  yaml:
 
 

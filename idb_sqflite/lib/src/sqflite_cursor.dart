@@ -253,7 +253,7 @@ mixin _IdbCursorWithValueCommonControllerSqflite
 abstract class _IdbControllerSqflite {
   int? get currentIndex;
   set currentIndex(int? currentIndex);
-  set _rows(List<IdbRecordSnapshotSqflite> _rows);
+  set _rows(List<IdbRecordSnapshotSqflite> rows);
   void _autoNext();
 }
 
@@ -295,6 +295,7 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
 }
 
 mixin IdbStoreCursorCommonControllerSqflite
+    // ignore: library_private_types_in_public_api
     on _IdbCursorCommonControllerSqflite {
   @override
   String get sqlTableName => store.sqlTableName;

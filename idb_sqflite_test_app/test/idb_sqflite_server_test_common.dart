@@ -1,5 +1,5 @@
 import 'package:idb_sqflite/src/sqflite_factory.dart';
-import 'package:idb_test/idb_test_common.dart';
+import 'package:idb_test/idb_test_common.dart'; // ignore: depend_on_referenced_packages
 import 'package:sqflite/sqlite_api.dart' as sqflite;
 
 export 'package:sqflite_common/sqflite_dev.dart';

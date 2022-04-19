@@ -24,6 +24,7 @@ dependencies:
   idb_sqflite:
   sqflite:
   sqflite_common_ffi:
+  sqflite_common:
 
 dev_dependencies:
   flutter_test:

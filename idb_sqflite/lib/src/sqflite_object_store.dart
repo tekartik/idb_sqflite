@@ -73,11 +73,8 @@ class IdbObjectStoreSqflite
 
   // create
   Future create() async {
-    var createSql = 'CREATE TABLE $sqlTableName ($primaryKeyColumnName ' +
-        (autoIncrement
-            ? 'INTEGER PRIMARY KEY AUTOINCREMENT'
-            : 'BLOB PRIMARY KEY') +
-        ', $valueColumnName BLOB)';
+    var createSql =
+        'CREATE TABLE $sqlTableName ($primaryKeyColumnName ${autoIncrement ? 'INTEGER PRIMARY KEY AUTOINCREMENT' : 'BLOB PRIMARY KEY'}, $valueColumnName BLOB)';
 
     var metaText = jsonEncode(meta!.toMap());
 
