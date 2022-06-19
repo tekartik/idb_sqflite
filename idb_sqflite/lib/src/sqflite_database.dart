@@ -183,10 +183,10 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     /// Open the sqflite database
     /// When done oldVersion is initialized
-    Future<sqflite.Database> _openSqlDb(String name) {
+    Future<sqflite.Database> openSqlDb(String name) {
       /// Init the database
       /// Set oldVersion to 0
-      Future _initDatabase(sqflite.Database db) async {
+      Future initDatabase(sqflite.Database db) async {
         await db.execute('DROP TABLE IF EXISTS $versionTable'); //
 
         await db.execute(
@@ -209,7 +209,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                 await db.execute('PRAGMA foreign_keys = ON');
               },
               onCreate: (db, _) async {
-                await _initDatabase(db);
+                await initDatabase(db);
               },
               onDowngrade: sqflite.onDatabaseDowngradeDelete,
               onOpen: (db) async {
@@ -233,16 +233,16 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                     if (isDebug) {
                       print(e);
                     }
-                    await _initDatabase(db);
+                    await initDatabase(db);
                   }
                 }
               }));
     }
 
     // Set right away needed from transaction
-    sqlDb = await _openSqlDb(name);
+    sqlDb = await openSqlDb(name);
 
-    Future _checkVersion(IdbTransactionSqflite transaction) async {
+    Future checkVersion(IdbTransactionSqflite transaction) async {
       var upgrading = false;
       // devPrint('_checkVersion $oldVersion $newVersion');
 
@@ -300,7 +300,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     var transaction = IdbOpenTransactionSqflite(this, txnMeta);
     try {
       await transaction.run(() async {
-        await _checkVersion(transaction);
+        await checkVersion(transaction);
       });
       await transaction.completed;
     } catch (e) {
