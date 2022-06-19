@@ -12,13 +12,13 @@ void defineTests(IdbFactory? factory) {
         var dbName = 'delete_database.db';
         await factory!.deleteDatabase(dbName);
 
-        void _initializeDatabase(VersionChangeEvent e) {
+        void initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
           db.createObjectStore('name', keyPath: 'keyPath', autoIncrement: true);
         }
 
         db = await factory.open(dbName,
-            version: 1, onUpgradeNeeded: _initializeDatabase);
+            version: 1, onUpgradeNeeded: initializeDatabase);
         // Create a transaction and close right away
         db.transaction('name', idbModeReadOnly);
 
@@ -36,7 +36,7 @@ void defineTests(IdbFactory? factory) {
 
     group('multi_entry', () {
       test('extra_table', () async {
-        void _initializeDatabase(VersionChangeEvent e) {
+        void initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
           var objectStore =
               db.createObjectStore(testStoreName, autoIncrement: true);
@@ -47,7 +47,7 @@ void defineTests(IdbFactory? factory) {
         var name = 'impl_multi_entry';
         await factory!.deleteDatabase(name);
         var db = await factory.open(name,
-            version: 1, onUpgradeNeeded: _initializeDatabase);
+            version: 1, onUpgradeNeeded: initializeDatabase);
 
         var sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
         var list = await sqlDb.query('sqlite_master');
@@ -89,7 +89,7 @@ void defineTests(IdbFactory? factory) {
 
     group('index', () {
       test('content', () async {
-        void _initializeDatabase(VersionChangeEvent e) {
+        void initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
           var objectStore =
               db.createObjectStore(testStoreName, autoIncrement: true);
@@ -99,7 +99,7 @@ void defineTests(IdbFactory? factory) {
         var name = 'impl_multi_entry';
         await factory!.deleteDatabase(name);
         var db = await factory.open(name,
-            version: 1, onUpgradeNeeded: _initializeDatabase);
+            version: 1, onUpgradeNeeded: initializeDatabase);
 
         try {
           var txn = db.transaction(testStoreName, idbModeReadWrite);
@@ -129,7 +129,7 @@ void defineTests(IdbFactory? factory) {
       test('parallel_multi_insert', () async {
         var txnCount = 4;
         var insertCount = 1000;
-        void _initializeDatabase(VersionChangeEvent e) {
+        void initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
           db.createObjectStore(testStoreName);
         }
@@ -137,7 +137,7 @@ void defineTests(IdbFactory? factory) {
         var name = 'parallel_multi_insert';
         await factory!.deleteDatabase(name);
         var db = await factory.open(name,
-            version: 1, onUpgradeNeeded: _initializeDatabase);
+            version: 1, onUpgradeNeeded: initializeDatabase);
         var id = 1;
         Future insert(int count) async {
           var txn = db.transaction(testStoreName, idbModeReadWrite);
