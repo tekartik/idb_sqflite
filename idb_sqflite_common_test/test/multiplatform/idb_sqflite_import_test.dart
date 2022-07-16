@@ -4,8 +4,6 @@ import 'package:idb_sqflite/src/env_utils.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:test/test.dart';
 
-import '../idb_sqflite_test_common.dart';
-
 class _DatabaseFactoryMock implements DatabaseFactory {
   @override
   Future<bool> databaseExists(String path) {
