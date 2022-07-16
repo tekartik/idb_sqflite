@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Fix #11, stack overflow when dealing with large dataset
+
 ## 1.1.0
 
 * Requires dart sdk 2.15
