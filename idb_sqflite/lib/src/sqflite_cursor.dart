@@ -199,7 +199,13 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
   void _autoNext() {
     if (advance(1)) {
       if (autoAdvance) {
-        _autoNext();
+        // Handle issue #11
+        // https://github.com/tekartik/idb_sqflite/issues/11
+        // that causes stackoverflow,
+        // we use to call _autoNextDirectly here
+        scheduleMicrotask(() {
+          _autoNext();
+        });
       }
     }
   }
