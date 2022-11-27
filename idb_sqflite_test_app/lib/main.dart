@@ -125,7 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     'You have pushed the button this many times:',
                   ),
                   if (count != null)
-                    Text('$count', style: Theme.of(context).textTheme.headline5)
+                    Text('$count',
+                        style: Theme.of(context).textTheme.headlineSmall)
                 ],
               ),
             ),
