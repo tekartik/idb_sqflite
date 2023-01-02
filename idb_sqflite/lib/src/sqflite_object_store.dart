@@ -318,6 +318,14 @@ class IdbObjectStoreSqflite
 
   @override
   Index createIndex(String name, keyPath, {bool? unique, bool? multiEntry}) {
+    // Be compatible with Chrome
+    if (keyPath is List) {
+      // // Native: InvalidAccessError: Failed to execute 'createIndex' on 'IDBObjectStore': The keyPath argument was an array and the multiEntry option is true.
+      if (multiEntry ?? false) {
+        throw DatabaseError(
+            'The keyPath argument $keyPath cannot be an array if the multiEntry option is true');
+      }
+    }
     var indexMeta = IdbIndexMeta(name, keyPath, unique, multiEntry);
     meta!.createIndex(database.meta, indexMeta);
     var index = IdbIndexSqflite(this, indexMeta);
