@@ -229,8 +229,8 @@ class IdbObjectStoreSqflite
   Object valueRowToRecord(Object pk, Object row) {
     var value = fromSqfliteValue(decodeValue(row)!);
     if (value is Map) {
-      if (keyPath != null && getMapFieldValue(value, keyPath!) == null) {
-        setMapFieldValue(value, keyPath!, pk);
+      if (keyPath != null && value.getKeyValue(keyPath!) == null) {
+        value.setKeyValue(keyPath!, pk);
       }
     }
     return value;

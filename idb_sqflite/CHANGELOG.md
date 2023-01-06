@@ -1,3 +1,7 @@
+## 1.2.0
+
+* Add array support for store keyPath.
+
 ## 1.1.1
 
 * Fix #11, stack overflow when dealing with large dataset
