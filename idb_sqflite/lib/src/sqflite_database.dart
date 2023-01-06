@@ -313,7 +313,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
   @override
   ObjectStore createObjectStore(String name,
-      {String? keyPath, bool? autoIncrement = false}) {
+      {Object? keyPath, bool? autoIncrement = false}) {
     var storeMeta = IdbObjectStoreMeta(name, keyPath, autoIncrement);
     meta.createObjectStore(storeMeta);
 
