@@ -1,6 +1,6 @@
-## 1.2.0
+## 1.2.0+1
 
-* Add array support for store keyPath.
+* Add support for store composite keyPath.
 
 ## 1.1.1
 
