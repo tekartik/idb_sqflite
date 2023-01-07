@@ -10,6 +10,7 @@ import 'package:idb_sqflite/src/sqflite_cursor.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:idb_sqflite/src/sqflite_index.dart';
+import 'package:idb_sqflite/src/sqflite_key_path.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
@@ -18,7 +19,7 @@ import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'core_imports.dart';
 
 class IdbObjectStoreSqflite
-    with ObjectStoreWithMetaMixin
+    with IdbSqfliteKeyPathMixin, ObjectStoreWithMetaMixin
     implements ObjectStore {
   IdbObjectStoreSqflite(this.transaction, this.meta);
 
@@ -38,6 +39,9 @@ class IdbObjectStoreSqflite
 
    */
   Future? _lazyPrepare;
+
+  @override
+  Object? get primaryKeyPath => keyPath;
 
   String sqlColumnName(String? keyPath) {
     if (keyPath == null) {
@@ -71,19 +75,48 @@ class IdbObjectStoreSqflite
         where: '$nameField = ?', whereArgs: [name]);
   }
 
-  // create
-  Future create() async {
-    var createSql =
-        'CREATE TABLE $sqlTableName ($primaryKeyColumnName ${autoIncrement ? 'INTEGER PRIMARY KEY AUTOINCREMENT' : 'BLOB PRIMARY KEY'}, $valueColumnName BLOB)';
+  /// Create the store table.
+  Future<void> create() async {
+    var sb = StringBuffer();
+
+    /// Create store table.
+    /// CREATE TABLE s__test_store (pk INTEGER PRIMARY KEY AUTOINCREMENT, v BLOB)
+    /// CREATE TABLE s__test_store (pk BLOB PRIMARY KEY, v BLOB)
+    ///
+    /// or
+    /// CREATE TABLE s__test_store (pk1 BLOB, pk2 BLOB, v BLOB)
+    sb.write('CREATE TABLE $sqlTableName (');
+    if (autoIncrement) {
+      sb.write('$primaryKeyColumnName INTEGER PRIMARY KEY AUTOINCREMENT');
+    } else {
+      if (isCompositeKey) {
+        sb.write(
+            primaryKeyColumnNames.map((e) => '$e BLOB NOT NULL').join(', '));
+      } else {
+        sb.write('$primaryKeyColumnName BLOB PRIMARY KEY');
+      }
+    }
+    sb.write(', $valueColumnName BLOB)');
+    var createSql = sb.toString();
 
     var metaText = jsonEncode(meta!.toMap());
 
     var txn = transaction;
-    await txn.execute('DROP TABLE IF EXISTS $sqlTableName');
-    await txn.execute(createSql);
-    await txn.insert(
-        storesTable, <String, Object?>{nameField: name, metaField: metaText});
+    await txn.batch((batch) {
+      batch.execute('DROP TABLE IF EXISTS $sqlTableName');
+      batch.execute(createSql);
+      batch.insert(
+          storesTable, <String, Object?>{nameField: name, metaField: metaText});
+
+      if (isCompositeKey) {
+        batch.execute(
+            'CREATE INDEX $compositePrimateKeyIndexName ON $sqlTableName (${primaryKeyColumnNames.join(', ')})');
+      }
+    });
   }
+
+  String get compositePrimateKeyIndexName =>
+      '${sqlTableName}__$primaryKeyColumnName';
 
   Future<T> _checkWritableStore<T>(Future<T> Function() computation) {
     if (transaction.meta!.mode != idbModeReadWrite) {
@@ -145,16 +178,15 @@ class IdbObjectStoreSqflite
   Future<Object> addImpl(Object value, [Object? key]) async {
     var map = <String, Object?>{valueColumnName: encodeValue(value)};
     if (key != null) {
-      map[primaryKeyColumnName] = key;
+      mapSetPrimaryKeyValue(map, key);
     }
-
     var insertId = await transaction.insert(sqlTableName, map);
     var primaryKey = key ?? insertId;
 
     // Add the index value for each index for external tables
     for (var index in _indecies) {
       if (value is Map) {
-        var keyValue = mapValueAtKeyPath(value, index.keyPath);
+        var keyValue = value.getKeyValue(index.keyPath);
         if (keyValue != null) {
           await index.insertKey(insertId, keyValue);
         }
@@ -191,8 +223,9 @@ class IdbObjectStoreSqflite
     if (key == null) {
       return addImpl(value);
     }
+    var condition = KeyPathWhere.pkEquals(this, key);
     var count = await transaction.update(sqlTableName, values,
-        where: '$primaryKeyColumnName = ?', whereArgs: [encodeKey(key)]);
+        where: condition.where, whereArgs: condition.whereArgs);
     if (count == 0) {
       return addImpl(value, key);
     }
@@ -238,21 +271,22 @@ class IdbObjectStoreSqflite
 
   Future<Object?> getImpl(Object key) async {
     var row = await getFirstRow(key,
-        columns: [primaryKeyColumnName, valueColumnName]);
+        columns: [...primaryKeyColumnNames, valueColumnName]);
     if (row == null) {
       return null;
     }
-    return valueRowToRecord(row[primaryKeyColumnName]!, row[valueColumnName]!);
+    return valueRowToRecord(rowGetPrimaryKeyValue(row), row[valueColumnName]!);
   }
 
   /// Returns null if not found
   Future<Map<String, Object?>?> getFirstRow(Object key,
       {required List<String> columns}) async {
     // keyPath ??= this.keyPath;
+    var condition = KeyPathWhere.pkEquals(this, key);
     var rows = await transaction.query(sqlTableName,
         columns: columns,
-        where: '$primaryKeyColumnName = ?',
-        whereArgs: [encodeKey(key)],
+        where: condition.where,
+        whereArgs: condition.whereArgs,
         limit: 1);
     if (rows.isEmpty) {
       return null;
@@ -269,11 +303,11 @@ class IdbObjectStoreSqflite
   /// Return the primary key
   /// @deprecated once index is a table
   Future<Object?> getKeyImpl(Object key, [String? keyPath]) async {
-    var row = await getFirstRow(key, columns: [primaryKeyColumnName]);
+    var row = await getFirstRow(key, columns: primaryKeyColumnNames);
     if (row == null) {
       return null;
     }
-    return decodeKey(row.values.first!);
+    return rowGetPrimaryKeyValue(row);
   }
 
   @override
@@ -299,7 +333,6 @@ class IdbObjectStoreSqflite
   }
 
   Future<void> deleteImpl(Object key) async {
-    var sqlArgs = [encodeKey(key)];
     // remove the index value
     int? primaryId;
     for (var index in _indecies) {
@@ -307,8 +340,9 @@ class IdbObjectStoreSqflite
       await index.deleteKey(primaryId!);
     }
 
+    var condition = KeyPathWhere.pkEquals(this, key);
     await transaction.delete(sqlTableName,
-        where: '$primaryKeyColumnName = ?', whereArgs: sqlArgs);
+        where: condition.where, whereArgs: condition.whereArgs);
   }
 
   @override
@@ -371,8 +405,8 @@ class IdbObjectStoreSqflite
   @override
   Future<int> count([keyOrKeyRange]) {
     return checkStore(() {
-      final query = SqfliteCountQuery(
-          sqlTableName, [primaryKeyColumnName], keyOrKeyRange);
+      final query =
+          SqfliteCountQuery(sqlTableName, primaryKeyColumnNames, keyOrKeyRange);
       return query.count(transaction);
     });
   }
@@ -381,7 +415,7 @@ class IdbObjectStoreSqflite
   Future<List<Object>> getAll([Object? query, int? count]) {
     return checkStore(() {
       var columns = [valueColumnName];
-      var keyColumnNames = [primaryKeyColumnName];
+      var keyColumnNames = primaryKeyColumnNames;
       var selectQuery = SqfliteSelectQuery(
           columns, sqlTableName, keyColumnNames, query, idbDirectionNext,
           limit: count);
@@ -396,14 +430,15 @@ class IdbObjectStoreSqflite
   @override
   Future<List<Object>> getAllKeys([Object? query, int? count]) {
     return checkStore(() {
-      var columns = [primaryKeyColumnName];
-      var keyColumnNames = [primaryKeyColumnName];
+      var keyColumnNames = primaryKeyColumnNames;
+      var columns = keyColumnNames;
+
       var selectQuery = SqfliteSelectQuery(
           columns, sqlTableName, keyColumnNames, query, idbDirectionNext,
           limit: count);
       return selectQuery.execute(transaction).then((rs) {
         return rs
-            .map((row) => decodeKey(row[primaryKeyColumnName]!))
+            .map((row) => rowGetPrimaryKeyValue(row))
             .toList(growable: false);
       });
     });

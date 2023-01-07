@@ -17,6 +17,10 @@ const primaryIdColumnName = 'pid';
 /// key1, key2...
 String keyIndexToKeyName(int index) => '$keyColumnName${index + 1}';
 
+/// For composite key.
+String primaryKeyIndexToKeyName(int index) =>
+    '$primaryKeyColumnName${index + 1}';
+
 const sqliteRowId = 'rowid';
 
 /// Returns always a list unless null

@@ -11,30 +11,38 @@ import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
 
+mixin IdbRecordSnapshotSqfliteMixin {}
+
 abstract class IdbRecordSnapshotSqflite {
-  IdbRecordSnapshotSqflite(this.row);
+  IdbRecordSnapshotSqflite(this.store, this.row);
+
+  final IdbObjectStoreSqflite store;
   final Map<String, Object?> row;
 
   Object get key;
-  Object get primaryKey => decodeKey(row[primaryKeyColumnName]!);
+
+  Object get primaryKey => store.rowGetPrimaryKeyValue(row);
 
   Object get value => fromSqfliteValue(decodeValue(row[valueColumnName])!);
 }
 
 class IdbStoreRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
-  IdbStoreRecordSnapshotSqflite(Map<String, Object?> row) : super(row);
+  IdbStoreRecordSnapshotSqflite(
+      IdbObjectStoreSqflite store, Map<String, Object?> row)
+      : super(store, row);
 
   @override
   Object get key => primaryKey;
 }
 
 class IdbIndexRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
-  IdbIndexRecordSnapshotSqflite(
-      this.key, this._primaryKey, Map<String, Object?> row)
-      : super(row);
+  IdbIndexRecordSnapshotSqflite(IdbObjectStoreSqflite store, this.key,
+      this._primaryKey, Map<String, Object?> row)
+      : super(store, row);
   final Object? _primaryKey;
+
   @override
-  Object get primaryKey => _primaryKey ?? decodeKey(row[primaryKeyColumnName]!);
+  Object get primaryKey => _primaryKey ?? store.rowGetPrimaryKeyValue(row);
 
   @override
   final Object key;
@@ -77,7 +85,8 @@ abstract class _IdbCommonCursorSqflite<T extends Cursor> {
 
   Future<void> update(Object value) async {
     value = toSqfliteValue(value);
-    await _ctlr.store.putImpl(value, primaryKey);
+    var store = _ctlr.store;
+    await store.putImpl(value, primaryKey);
     // Index only handle
     if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
       // Also update all records in the current list...
@@ -86,6 +95,7 @@ abstract class _IdbCommonCursorSqflite<T extends Cursor> {
         if (_ctlr._rows[i].primaryKey == primaryKey) {
           // We know it is an index cursor
           _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
+              store,
               _ctlr._rows[i].key,
               primaryKey,
               <String, Object?>{valueColumnName: encodeValue(value)});
@@ -246,8 +256,11 @@ class IdbCursorWithValueControllerSqflite
       : super(direction, autoAdvance);
   @override
   IdbObjectStoreSqflite store;
+
+  List<String> get primaryKeyColumnNames => store.primaryKeyColumnNames;
+
   @override
-  List<String> get columns => [primaryKeyColumnName, valueColumnName];
+  List<String> get columns => [...primaryKeyColumnNames, valueColumnName];
 }
 
 mixin _IdbCursorWithValueCommonControllerSqflite
@@ -258,8 +271,11 @@ mixin _IdbCursorWithValueCommonControllerSqflite
 
 abstract class _IdbControllerSqflite {
   int? get currentIndex;
+
   set currentIndex(int? currentIndex);
+
   set _rows(List<IdbRecordSnapshotSqflite> rows);
+
   void _autoNext();
 }
 
@@ -273,7 +289,7 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
   // to override
   List<String> get columns;
 
-  /// The list of key [pk
+  /// The list of key [pk] or [pk1...]
   List<String> get keyColumnNames;
 
   IdbObjectStoreSqflite get store;
@@ -301,18 +317,20 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
 }
 
 mixin IdbStoreCursorCommonControllerSqflite
-    // ignore: library_private_types_in_public_api
+// ignore: library_private_types_in_public_api
     on _IdbCursorCommonControllerSqflite {
   @override
   String get sqlTableName => store.sqlTableName;
 
+  /// For the store, the key is the primary key
   @override
-  List<String> get keyColumnNames => [primaryKeyColumnName];
+  List<String> get keyColumnNames => store.primaryKeyColumnNames;
 
   @override
   set rows(List<Map<String, Object?>> rows) {
     currentIndex = -1;
-    _rows = rows.map((row) => IdbStoreRecordSnapshotSqflite(row)).toList();
+    _rows =
+        rows.map((row) => IdbStoreRecordSnapshotSqflite(store, row)).toList();
     _autoNext();
   }
 }
@@ -327,6 +345,8 @@ mixin _IdbIndexCursorCommonControllerSqflite
   @override
   List<String> get keyColumnNames => index.keyColumnNames;
 
+  List<String> get primaryKeyColumnNames => store.primaryKeyColumnNames;
+
   @override
   String get sqlTableName => index.sqlIndexViewName;
 
@@ -335,7 +355,8 @@ mixin _IdbIndexCursorCommonControllerSqflite
     currentIndex = -1;
     _rows = rows
         .map((row) => IdbIndexRecordSnapshotSqflite(
-            index.isMultiKey
+            store,
+            index.isCompositeKey
                 ? _keyValue(row, keyColumnNames)
                 : _keyValue(row, keyColumnName),
             null,
@@ -357,7 +378,7 @@ class IdbIndexKeyCursorControllerSqflite
   }
 
   @override
-  List<String> get columns => [...keyColumnNames, primaryKeyColumnName];
+  List<String> get columns => [...keyColumnNames, ...primaryKeyColumnNames];
 }
 
 class IdbKeyCursorControllerSqflite extends _IdbKeyCursorBaseControllerSqflite
@@ -372,7 +393,7 @@ class IdbKeyCursorControllerSqflite extends _IdbKeyCursorBaseControllerSqflite
   IdbObjectStoreSqflite store;
 
   @override
-  List<String> get columns => [primaryKeyColumnName];
+  List<String> get columns => store.primaryKeyColumnNames;
 }
 
 class IdbIndexCursorWithValueControllerSqflite
@@ -389,5 +410,5 @@ class IdbIndexCursorWithValueControllerSqflite
 
   @override
   List<String> get columns =>
-      [...keyColumnNames, primaryKeyColumnName, valueColumnName];
+      [...keyColumnNames, ...primaryKeyColumnNames, valueColumnName];
 }
