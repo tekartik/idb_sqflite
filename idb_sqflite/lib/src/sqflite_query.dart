@@ -137,7 +137,9 @@ class SqfliteSelectQuery extends SqfliteQuery {
       }
     } else {
       // Not null needed for index key
-      if (keyColumns.isNotEmpty && keyColumns.first != primaryKeyColumnName) {
+      // Not it using pk[1] but using k1, k2...
+      if (keyColumns.isNotEmpty &&
+          !keyColumns.first.startsWith(primaryKeyColumnName)) {
         sb.write(
             '${keyColumns.map((column) => '$column NOT NULL').join(' AND ')}');
       }

@@ -25,7 +25,7 @@ dependencies:
       url: https://github.com/tekartik/idb_shim.dart
       ref: dart2_3
       path: idb_test
-    version: '>=0.2.1'
+    version: '>=0.3.0'
   test:
 dev_dependencies:
   sqflite_common_ffi: '>=2.0.0-nullsafety.1'
@@ -42,6 +42,6 @@ dependency_overrides:
   # idb_shim:
   #    path: ../../idb_shim.dart/idb_shim
   # idb_test:
-  #    path: ../../idb_shim.dart/idb_test
+  #  path: ../../idb_shim.dart/idb_test
   # sqflite_common_ffi:
   #  path: ../../sqflite/sqflite_common_ffi

@@ -4,6 +4,7 @@ import 'package:idb_shim/src/common/common_meta.dart';
 import 'package:idb_shim/src/common/common_validation.dart';
 import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_cursor.dart';
+import 'package:idb_sqflite/src/sqflite_key_path.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
@@ -11,8 +12,13 @@ import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
-class IdbIndexSqflite with IndexWithMetaMixin implements Index {
+class IdbIndexSqflite
+    with IdbSqfliteKeyPathMixin, IndexWithMetaMixin
+    implements Index {
   IdbIndexSqflite(this.store, this.meta);
+
+  @override
+  Object? get primaryKeyPath => store.primaryKeyPath;
 
   IdbObjectStoreSqflite store;
   @override
@@ -36,20 +42,10 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   // Ordered keys
   final keys = <dynamic>[];
 
-  /// true if keyPath is an array
-  bool get isMultiKey => keyPath is List;
-
-  int get multiKeyCount => (keyPath as List).length;
-
   IdbTransactionSqflite? get transaction => store.transaction;
 
-  // either 'k', or 'k1, k2, k3...'
-  List<String> get keyColumnNames => isMultiKey
-      ? List.generate(multiKeyCount, (i) => keyIndexToKeyName(i))
-      : [keyColumnName];
-
   Future create() async {
-    if (multiEntry && isMultiKey) {
+    if (multiEntry && isCompositeKey) {
       throw UnsupportedError(
           'Having multiEntry and multiKey path is not supported');
     }
@@ -64,11 +60,11 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
       // 'FOREIGN KEY ($primaryIdColumnName) REFERENCES $sqlStoreTableName($sqliteRowId) ON DELETE CASCADE)');
 
       batch.execute(
-          'CREATE VIEW $sqlIndexViewName AS SELECT ${keyColumnNames.join(', ')}, $primaryKeyColumnName, $valueColumnName '
+          'CREATE VIEW $sqlIndexViewName AS SELECT ${keyColumnNames.join(', ')}, ${primaryKeyColumnNames.join(', ')}, $valueColumnName '
           'FROM $tableName INNER JOIN $sqlStoreTableName ON $tableName.$primaryIdColumnName = $sqlStoreTableName.$sqliteRowId');
-      if (isMultiKey) {
+      if (isCompositeKey) {
         // Create index on each key
-        for (var i = 0; i < multiKeyCount; i++) {
+        for (var i = 0; i < compositeKeyCount; i++) {
           var keyColumnName = keyIndexToKeyName(i);
           batch.execute(
               'CREATE INDEX ${keyColumnNameToSqlIndexName(keyColumnName)} ON $tableName ($keyColumnName)');
@@ -117,22 +113,23 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
     checkKeyParam(key);
     return _checkIndex(() async {
       var row = await getFirstRow(key,
-          columns: [primaryKeyColumnName, valueColumnName]);
+          columns: [...primaryKeyColumnNames, valueColumnName]);
       if (row == null) {
         return null;
       }
       return store.valueRowToRecord(
-          row[primaryKeyColumnName]!, row[valueColumnName]!);
+          store.rowGetPrimaryKeyValue(row), row[valueColumnName]!);
     });
   }
 
   /// Returns null if not found
   Future<Map<String, Object?>?> getFirstRow(Object key,
       {List<String>? columns}) async {
+    var condition = KeyPathWhere.keyEquals(this, key);
     var rows = await transaction!.query(sqlIndexViewName,
         columns: columns,
-        where: '${keyColumnNames.map((name) => '$name = ?').join(' AND ')}',
-        whereArgs: itemOrItemsToList(key)?.cast<Object>(),
+        where: condition.where,
+        whereArgs: condition.whereArgs,
         limit: 1);
     if (rows.isEmpty) {
       return null;
@@ -148,7 +145,7 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
       throw UnsupportedError('Index.getKey(keyRange) not supported');
     }
     return _checkIndex(() async {
-      var row = await getFirstRow(key, columns: [primaryKeyColumnName]);
+      var row = await getFirstRow(key, columns: store.primaryKeyColumnNames);
       if (row == null) {
         return null;
       }
@@ -208,10 +205,10 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
         }
       } else {
         var map = <String, Object?>{primaryIdColumnName: primaryId};
-        if (isMultiKey) {
-          assert(keyValue is List && keyValue.length == multiKeyCount);
+        if (isCompositeKey) {
+          assert(keyValue is List && keyValue.length == compositeKeyCount);
           // Create index on each key plus one for all
-          for (var i = 0; i < multiKeyCount; i++) {
+          for (var i = 0; i < compositeKeyCount; i++) {
             var keyColumnName = keyIndexToKeyName(i);
             // Can be null
             map[keyColumnName] = _encodeKeyOrNull((keyValue as List)[i]);
@@ -268,14 +265,14 @@ class IdbIndexSqflite with IndexWithMetaMixin implements Index {
   Future<List<Object>> getAllKeys([query, int? count]) {
     return _checkIndex(() {
       var tableName = sqlIndexViewName;
-      var columns = [primaryKeyColumnName];
+      var columns = primaryKeyColumnNames;
       var keyColumnNames = this.keyColumnNames;
       var selectQuery = SqfliteSelectQuery(
           columns, tableName, keyColumnNames, query, idbDirectionNext,
           limit: count);
       return selectQuery.execute(transaction).then((rs) {
         return rs
-            .map((row) => decodeKey(row[primaryKeyColumnName] as Object))
+            .map((row) => rowGetPrimaryKeyValue(row))
             .toList(growable: false);
       });
     });
