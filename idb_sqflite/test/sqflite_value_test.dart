@@ -51,7 +51,8 @@ void main() {
         true,
         // null, nnbd no longer supports null
         //<dynamic, dynamic>{},
-        [],
+        <Object>[],
+        [1, null, 3],
         [
           {
             'test': [

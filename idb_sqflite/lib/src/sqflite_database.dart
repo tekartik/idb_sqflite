@@ -296,6 +296,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       }
     }
 
+    // Special transaction without store
     var txnMeta = meta.transaction(null, idbModeReadWrite);
     var transaction = IdbOpenTransactionSqflite(this, txnMeta);
     try {

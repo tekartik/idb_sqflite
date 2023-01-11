@@ -24,7 +24,7 @@ String primaryKeyIndexToKeyName(int index) =>
 const sqliteRowId = 'rowid';
 
 /// Returns always a list unless null
-List? itemOrItemsToList(itemOrItems) {
+List? itemOrItemsToList(Object? itemOrItems) {
   if (itemOrItems == null) {
     return null;
   }
