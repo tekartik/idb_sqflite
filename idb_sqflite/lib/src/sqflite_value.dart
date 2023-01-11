@@ -120,7 +120,7 @@ Object? _fromSqfliteValue(Object? value) {
     var list = value;
     List? clone;
     for (var i = 0; i < list.length; i++) {
-      var item = list[i] as Object;
+      var item = list[i] as Object?;
       var converted = _fromSqfliteValue(item);
       if (!identical(converted, item)) {
         clone ??= List.from(list);
