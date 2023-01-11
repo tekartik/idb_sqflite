@@ -1,13 +1,13 @@
 name: idb_sqflite
 description: IndexedDB API on top of sqflite for Flutter (Desktop and Mobile) and DartVM io applications
 homepage: https://github.com/tekartik/idb_sqflite/tree/master/idb_sqflite
-version: 1.2.0+1
+version: 1.3.0-1
 
 environment:
   sdk: '>=2.18.0 <3.0.0'
 
 dependencies:
-  idb_shim: '>=2.2.0 <4.0.0'
+  idb_shim: '>=2.3.0-2 <4.0.0'
   sqflite_common: '>=2.1.0 <4.0.0'
   meta: '>=1.3.0 <3.0.0'
 
