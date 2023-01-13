@@ -162,7 +162,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
 class SqfliteCountQuery extends SqfliteSelectQuery {
   SqfliteCountQuery(
-      String sqlTableName, List<String> keyColumns, keyOrKeyRange) //
+      String sqlTableName, List<String> keyColumns, Object? keyOrKeyRange) //
       : super(
           [_sqlCount],
           sqlTableName,

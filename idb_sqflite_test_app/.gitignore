@@ -21,6 +21,7 @@
 #.vscode/
 
 # Flutter/Dart/Pub related
+.metadata
 **/doc/api/
 .dart_tool/
 .flutter-plugins*
