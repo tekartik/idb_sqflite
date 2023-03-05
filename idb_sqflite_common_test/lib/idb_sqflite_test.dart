@@ -120,7 +120,7 @@ void defineTests(IdbFactory? factory) {
           store = txn.objectStore(testStoreName);
           await store.delete(pk);
           list = await sqlDb.query('test_store__name_index');
-          expect(list, []);
+          expect(list, isEmpty);
         } finally {
           db.close();
         }
