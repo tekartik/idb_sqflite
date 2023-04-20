@@ -1,7 +1,11 @@
+## 1.3.1
+
+* Dart 3 support
+
 ## 1.3.0
 
 * Support strict-casts mode
-* 
+ 
 ## 1.2.0+1
 
 * Add support for store composite keyPath.
