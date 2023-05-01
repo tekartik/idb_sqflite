@@ -21,7 +21,7 @@ void main() {
   });
 
   testWidgets('sqflite', (WidgetTester tester) async {
-    getIdbFactorySqflite(databaseFactory);
+    getIdbFactorySqflite(databaseFactorySqflitePlugin);
 
     try {
       idbFactorySembastIo;
@@ -32,7 +32,7 @@ void main() {
   });
 
   testWidgets('io', (WidgetTester tester) async {
-    getIdbFactorySqflite(databaseFactory);
+    getIdbFactorySqflite(databaseFactorySqflitePlugin);
 
     try {
       idbFactorySembastIo;

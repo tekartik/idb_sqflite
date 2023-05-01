@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 void main() {
   test('flutter', () {
     // Flutter default factory
-    var idbFactorySqflite = getIdbFactorySqflite(databaseFactory);
+    var idbFactorySqflite = getIdbFactorySqflite(databaseFactorySqflitePlugin);
 
     expect(idbFactorySqflite, isNotNull);
   });
