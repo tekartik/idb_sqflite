@@ -9,15 +9,15 @@ import 'package:idb_sqflite_common_test/sqflite_transaction_wrapper_test.dart'
     as transaction_wrapper;
 import 'package:idb_test/idb_test_common.dart';
 import 'package:idb_test/test_runner.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
 
 import 'idb_sqflite_test_common.dart';
 
 Future main() async {
   // Set sqflite ffi support in test
-  sqfliteFfiInit();
+  ffi.sqfliteFfiInit();
 
-  var factory = databaseFactoryFfi;
+  var factory = ffi.databaseFactoryFfi;
   // await factory.setLogLevel(sqfliteLogLevelVerbose);
   group('sqflite_ffi', () {
     var idbContext = TestContextSqfliteFfi();
@@ -27,7 +27,7 @@ Future main() async {
   });
 
   group('big insert/query', () {
-    var sqfliteDatabaseFactory = databaseFactoryFfiNoIsolate;
+    var sqfliteDatabaseFactory = ffi.databaseFactoryFfiNoIsolate;
     // sqfliteDatabaseFactory.debugSetLogLevel(sqfliteLogLevelVerbose);
     var factory =
         getIdbFactorySqflite(sqfliteDatabaseFactory); // idbFactoryNative;
