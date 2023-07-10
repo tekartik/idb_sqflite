@@ -60,7 +60,7 @@ Object _keyValue(Map<String, Object?> map, dynamic columnOrColumns) {
   }
 }
 
-abstract class _IdbCommonCursorSqflite<T extends Cursor> {
+abstract mixin class _IdbCommonCursorSqflite<T extends Cursor> {
   late IdbRecordSnapshotSqflite snapshot;
   late _IdbCursorBaseControllerSqflite<T> _ctlr;
 

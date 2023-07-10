@@ -2,7 +2,28 @@
 # See https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
 version: 2
 
+enable-beta-ecosystems: true
 updates:
+  - package-ecosystem: "pub"
+    directory: "idb_sqflite"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "pub"
+    directory: "idb_sqflite_common_test"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "pub"
+    directory: "idb_sqflite_support"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "pub"
+    directory: "idb_sqflite_test_app"
+    schedule:
+      interval: "monthly"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
