@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:idb_shim/idb_io.dart';
 import 'package:idb_sqflite/idb_sqflite.dart' hide Database;
 import 'package:idb_sqflite/src/env_utils.dart';
@@ -27,6 +29,16 @@ class _DatabaseFactoryMock implements DatabaseFactory {
 
   @override
   Future<void> setDatabasesPath(String path) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Uint8List> readDatabaseBytes(String path) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> writeDatabaseBytes(String path, Uint8List bytes) {
     throw UnimplementedError();
   }
 }
