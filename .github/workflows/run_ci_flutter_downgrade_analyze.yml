@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: ./idb_sqflite_support
+        working-directory: .
     strategy:
       fail-fast: false
       matrix:
