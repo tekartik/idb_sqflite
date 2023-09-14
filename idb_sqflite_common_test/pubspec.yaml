@@ -28,7 +28,7 @@ dependencies:
     version: '>=0.3.0'
   test:
 dev_dependencies:
-  sqflite_common_ffi: '>=2.0.0-nullsafety.1'
+  sqflite_common_ffi: '>=2.3.0'
   process_run: '>=0.10.1'
   lints: '>=1.0.1'
   build_runner: '>=1.5.0'
