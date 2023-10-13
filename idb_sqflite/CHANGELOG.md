@@ -1,3 +1,7 @@
+## 1.3.2
+
+* cursor utils support
+
 ## 1.3.1
 
 * Dart 3 support
