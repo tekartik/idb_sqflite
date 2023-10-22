@@ -51,7 +51,7 @@ class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
 }
 
 class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
-  IdbDatabaseSqflite(IdbFactory factory, String name) : super(factory) {
+  IdbDatabaseSqflite(super.factory, String name) {
     meta.name = name;
   }
 

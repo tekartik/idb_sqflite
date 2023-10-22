@@ -11,9 +11,7 @@ import 'idb_import.dart';
 bool debugTransactionSqflite = false; // devWarning(true);
 
 class IdbOpenTransactionSqflite extends IdbTransactionSqflite {
-  IdbOpenTransactionSqflite(
-      IdbDatabaseSqflite database, IdbTransactionMeta meta)
-      : super(database, meta);
+  IdbOpenTransactionSqflite(super.database, IdbTransactionMeta super.meta);
 }
 
 class IdbTransactionSqflite extends IdbTransactionBase

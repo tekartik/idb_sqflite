@@ -27,9 +27,7 @@ abstract class IdbRecordSnapshotSqflite {
 }
 
 class IdbStoreRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
-  IdbStoreRecordSnapshotSqflite(
-      IdbObjectStoreSqflite store, Map<String, Object?> row)
-      : super(store, row);
+  IdbStoreRecordSnapshotSqflite(super.store, super.row);
 
   @override
   Object get key => primaryKey;
@@ -228,8 +226,7 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
 
 abstract class _IdbKeyCursorBaseControllerSqflite
     extends _IdbCursorBaseControllerSqflite<Cursor> {
-  _IdbKeyCursorBaseControllerSqflite(String direction, bool autoAdvance)
-      : super(direction, autoAdvance);
+  _IdbKeyCursorBaseControllerSqflite(super.direction, super.autoAdvance);
 
   @override
   Cursor get newCursor => _IdbCursorSqflite(this, _rows[currentIndex!]);
@@ -237,8 +234,7 @@ abstract class _IdbKeyCursorBaseControllerSqflite
 
 abstract class _IdbCursorWithValueBaseControllerSqflite
     extends _IdbCursorBaseControllerSqflite<CursorWithValue> {
-  _IdbCursorWithValueBaseControllerSqflite(String direction, bool autoAdvance)
-      : super(direction, autoAdvance);
+  _IdbCursorWithValueBaseControllerSqflite(super.direction, super.autoAdvance);
 
   @override
   CursorWithValue get newCursor =>
