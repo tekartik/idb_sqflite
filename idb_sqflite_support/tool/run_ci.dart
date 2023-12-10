@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:dev_test/package.dart';
+import 'package:dev_build/package.dart';
 import 'package:path/path.dart';
 import 'package:process_run/shell.dart';
 import 'package:pub_semver/pub_semver.dart';
