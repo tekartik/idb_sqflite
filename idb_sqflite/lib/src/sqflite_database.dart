@@ -231,6 +231,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                     }
                   } catch (e) {
                     if (isDebug) {
+                      // ignore: avoid_print
                       print(e);
                     }
                     await initDatabase(db);

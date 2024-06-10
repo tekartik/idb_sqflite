@@ -158,5 +158,6 @@ class SqfliteTransactionWrapper {
 }
 
 void _log(dynamic message) {
+  // ignore: avoid_print
   print('/sqflite_transaction_wrapper $message');
 }

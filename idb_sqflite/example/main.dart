@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:idb_sqflite/idb_sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 

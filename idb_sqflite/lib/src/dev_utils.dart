@@ -7,6 +7,7 @@ set devPrintEnabled(bool enabled) => _devPrintEnabled = enabled;
 @Deprecated('Dev only')
 void devPrint(Object object) {
   if (_devPrintEnabled) {
+    // ignore: avoid_print
     print(object);
   }
 }
@@ -24,7 +25,9 @@ void _devError([Object? msg]) {
     throw UnsupportedError(msg?.toString() ?? 'error');
   } catch (e, st) {
     if (_devPrintEnabled) {
+      // ignore: avoid_print
       print('# ERROR $msg');
+      // ignore: avoid_print
       print(st);
     }
     rethrow;

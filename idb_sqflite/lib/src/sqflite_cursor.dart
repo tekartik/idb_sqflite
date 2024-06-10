@@ -10,6 +10,7 @@ import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
+import 'package:synchronized/synchronized.dart';
 
 mixin IdbRecordSnapshotSqfliteMixin {}
 
@@ -58,9 +59,15 @@ Object _keyValue(Map<String, Object?> map, dynamic columnOrColumns) {
   }
 }
 
-abstract mixin class _IdbCommonCursorSqflite<T extends Cursor> {
+abstract class _IdbCommonCursorSqfliteBase<T extends Cursor>
+    with _IdbCommonCursorSqfliteMixin<T> {}
+
+abstract mixin class _IdbCommonCursorSqfliteMixin<T extends Cursor> {
   late IdbRecordSnapshotSqflite snapshot;
   late _IdbCursorBaseControllerSqflite<T> _ctlr;
+
+  /// Set right away as it could change in the controller before update/delete is done.
+  late final int index;
 
   List<String> get keyColumnNames => _ctlr.keyColumnNames;
 
@@ -82,62 +89,70 @@ abstract mixin class _IdbCommonCursorSqflite<T extends Cursor> {
   }
 
   Future<void> update(Object value) async {
-    value = toSqfliteValue(value);
-    var store = _ctlr.store;
-    await store.putImpl(value, primaryKey);
-    // Index only handle
-    if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
-      // Also update all records in the current list...
-      var i = _ctlr.currentIndex! + 1;
-      while (i < _ctlr._rows.length) {
-        if (_ctlr._rows[i].primaryKey == primaryKey) {
-          // We know it is an index cursor
-          _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
-              store,
-              _ctlr._rows[i].key,
-              primaryKey,
-              <String, Object?>{valueColumnName: encodeValue(value)});
+    return _ctlr.lock.synchronized(() async {
+      value = toSqfliteValue(value);
+      var store = _ctlr.store;
+      await store.putImpl(value, primaryKey);
+      // Index only handle
+      if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
+        // Also update all records in the current list...
+        var i = index + 1;
+        while (i < _ctlr._rows.length) {
+          if (_ctlr._rows[i].primaryKey == primaryKey) {
+            // We know it is an index cursor
+            _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
+                store,
+                _ctlr._rows[i].key,
+                primaryKey,
+                <String, Object?>{valueColumnName: encodeValue(value)});
+            i++;
+          }
           i++;
         }
-        i++;
       }
-    }
+    });
   }
 
   Future delete() async {
-    await _ctlr.store.deleteImpl(primaryKey);
-    // Index only handle
-    if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
-      var i = _ctlr.currentIndex! + 1;
-      while (i < _ctlr._rows.length) {
-        if (_ctlr._rows[i].primaryKey == primaryKey) {
-          _ctlr._rows.removeAt(i);
-        } else {
-          i++;
+    return _ctlr.lock.synchronized(() async {
+      await _ctlr.store.deleteImpl(primaryKey);
+      // Index only handle
+      if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
+        var i = index + 1;
+        while (i < _ctlr._rows.length) {
+          if (_ctlr._rows[i].primaryKey == primaryKey) {
+            _ctlr._rows.removeAt(i);
+          } else {
+            i++;
+          }
         }
       }
-    }
+    });
   }
 
   @override
   String toString() => '$key $primaryKey';
 }
 
-class _IdbCursorSqflite extends Cursor with _IdbCommonCursorSqflite<Cursor> {
+class _IdbCursorSqflite extends _IdbCommonCursorSqfliteBase<Cursor>
+    implements Cursor {
   _IdbCursorSqflite(_IdbKeyCursorBaseControllerSqflite ctlr,
       IdbRecordSnapshotSqflite snapshot) {
     this.snapshot = snapshot;
     _ctlr = ctlr;
+    index = ctlr.currentIndex!;
   }
 }
 
 ///
-class _IdbCursorWithValueSqflite extends CursorWithValue
-    with _IdbCommonCursorSqflite<CursorWithValue> {
+class _IdbCursorWithValueSqflite
+    extends _IdbCommonCursorSqfliteBase<CursorWithValue>
+    implements CursorWithValue {
   _IdbCursorWithValueSqflite(_IdbCursorWithValueBaseControllerSqflite ctlr,
       IdbRecordSnapshotSqflite snapshot) {
     this.snapshot = snapshot;
     _ctlr = ctlr;
+    index = ctlr.currentIndex!;
   }
 
   @override
@@ -159,6 +174,7 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
     implements _IdbControllerSqflite {
   _IdbCursorBaseControllerSqflite(this.direction, this.autoAdvance);
 
+  final lock = Lock();
   String direction;
   bool autoAdvance;
 
@@ -186,21 +202,23 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
 
   /// false if it faield
   bool advance(int count) {
-    //int length = rows.length;
     currentIndex = currentIndex! + count;
-    if (!currentIndexValid) {
-      // Prevent auto advance
-      autoAdvance = false;
-      // endOperation();
-      // pure async
+    lock.synchronized(() {
+      if (!currentIndexValid) {
+        // Prevent auto advance
+        autoAdvance = false;
+        // endOperation();
+        // pure async
 
-      _ctlr.close();
-      return false;
-    } else {
-      _ctlr.add(newCursor);
-      // return new Future.value();
-      return true;
-    }
+        _ctlr.close();
+        return false;
+      } else {
+        _ctlr.add(newCursor);
+        // return new Future.value();
+        return true;
+      }
+    });
+    return currentIndexValid;
   }
 
   @override
