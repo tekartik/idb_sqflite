@@ -1,3 +1,7 @@
+## 1.3.3
+
+* sdb (Simple db) support.
+
 ## 1.3.2+1
 
 * cursor utils support
