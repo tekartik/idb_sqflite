@@ -40,8 +40,8 @@ dependency_overrides:
     path: ../idb_sqflite
   idb_sqflite_common_test:
     path: ../idb_sqflite_common_test
-  idb_shim:
-    path: ../../idb_shim.dart/idb_shim
+  #idb_shim:
+  #  path: ../../idb_shim.dart/idb_shim
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
