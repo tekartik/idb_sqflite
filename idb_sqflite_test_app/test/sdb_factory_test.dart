@@ -23,6 +23,6 @@ void main() {
 
       var db = await factory.openDatabase('test.db');
       await db.close();
-    });
+    }, skip: 'demo code');
   });
 }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:idb_sqflite/sdb_sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:test/test.dart';
@@ -13,12 +11,9 @@ void main() {
       if (kSdbDartIsWeb) {
         factory = sdbFactoryWeb;
       } else {
-        if (Platform.isWindows || Platform.isLinux) {
-          // Use sqflite_common_ffi on Windows and Linux
-          sqfliteFfiInit();
-          databaseFactory = databaseFactoryFfi;
-        }
-        factory = sdbFactorySqflite;
+        // Use sqflite_common_ffi on Dart VM
+        sqfliteFfiInit();
+        databaseFactory = databaseFactoryFfi;
       }
 
       var db = await factory.openDatabase('test.db');
