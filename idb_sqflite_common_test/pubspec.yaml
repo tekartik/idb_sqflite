@@ -14,7 +14,7 @@ publish_to: none
 version: 0.2.0
 
 environment:
-  sdk: '>=3.4.0-0 <4.0.0'
+  sdk: ^3.4.0
 
 dependencies:
   idb_sqflite:
@@ -28,6 +28,7 @@ dependencies:
     version: '>=0.3.0'
   test:
 dev_dependencies:
+  dev_test:
   sqflite_common_ffi: '>=2.3.0'
   process_run: '>=0.10.1'
   lints: '>=1.0.1'

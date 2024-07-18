@@ -14,7 +14,7 @@ description: Indexeddb sqflite test
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.4.0-0 <4.0.0'
+  sdk: ^3.4.0
 
 dependencies:
   flutter:
@@ -32,7 +32,7 @@ dev_dependencies:
   # flutter_driver:
   #  sdk: flutter
   process_run: '>=0.12.0-0'
-  dev_test: '>=0.13.1+1'
+  dev_test: '>=1.0.0'
   flutter_lints: '>=2.0.2'
 
 dependency_overrides:
@@ -40,7 +40,8 @@ dependency_overrides:
     path: ../idb_sqflite
   idb_sqflite_common_test:
     path: ../idb_sqflite_common_test
-
+  idb_shim:
+    path: ../../idb_shim.dart/idb_shim
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
