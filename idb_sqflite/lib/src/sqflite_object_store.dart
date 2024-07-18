@@ -176,6 +176,14 @@ class IdbObjectStoreSqflite
       meta!.indecies.map((meta) => IdbIndexSqflite(this, meta));
 
   Future<Object> addImpl(Object value, [Object? key]) async {
+    Map? mapValue;
+    if (value is Map) {
+      if (keyPath != null && _getInlineKey(value) == null) {
+        mapValue = cloneMap(value);
+      } else {
+        mapValue = value;
+      }
+    }
     var map = <String, Object?>{valueColumnName: encodeValue(value)};
     if (key != null) {
       mapSetPrimaryKeyValue(map, key);
@@ -183,10 +191,13 @@ class IdbObjectStoreSqflite
     var insertId = await transaction.insert(sqlTableName, map);
     var primaryKey = key ?? insertId;
 
-    // Add the index value for each index for external tables
-    for (var index in _indecies) {
-      if (value is Map) {
-        var keyValue = value.getKeyValue(index.keyPath);
+    if (mapValue != null) {
+      // Add the pk to the map in case it is needed by indexes.
+      _fixRecordValueWithPk(primaryKey, mapValue);
+
+      // Add the index value for each index for external tables
+      for (var index in _indecies) {
+        var keyValue = mapValue.getKeyValue(index.keyPath);
         if (keyValue != null) {
           await index.insertKey(insertId, keyValue);
         }
@@ -259,13 +270,32 @@ class IdbObjectStoreSqflite
         }));
   }
 
-  Object valueRowToRecord(Object pk, Object row) {
-    var value = fromSqfliteValue(decodeValue(row)!);
-    if (value is Map) {
-      if (keyPath != null && value.getKeyValue(keyPath!) == null) {
-        value.setKeyValue(keyPath!, pk);
+  /// Only for keyPath not null and Map value
+  Object? _getInlineKey(Object value) {
+    var keyPath = this.keyPath;
+    if (keyPath != null) {
+      if (value is Map) {
+        return value.getKeyValue(keyPath);
       }
     }
+    return false;
+  }
+
+  /// A record with a keyPath added/read might not contain the pk in its value
+  void _fixRecordValueWithPk(Object pk, Object value) {
+    var keyPath = this.keyPath;
+    if (keyPath != null) {
+      if (value is Map) {
+        if (value.getKeyValue(keyPath) == null) {
+          value.setKeyValue(keyPath, pk);
+        }
+      }
+    }
+  }
+
+  Object valueRowToRecord(Object pk, Object row) {
+    var value = fromSqfliteValue(decodeValue(row)!);
+    _fixRecordValueWithPk(pk, value);
     return value;
   }
 
