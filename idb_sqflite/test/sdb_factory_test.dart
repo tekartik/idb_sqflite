@@ -14,6 +14,9 @@ void main() {
         // Use sqflite_common_ffi on Dart VM
         sqfliteFfiInit();
         databaseFactory = databaseFactoryFfi;
+
+        // Set from the default sqflite factory
+        factory = sdbFactorySqflite;
       }
 
       var db = await factory.openDatabase('test.db');
