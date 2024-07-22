@@ -1,7 +1,5 @@
 // ignore_for_file: implementation_imports
 
-import 'dart:async';
-
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_index.dart';
@@ -11,6 +9,8 @@ import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:synchronized/synchronized.dart';
+
+import 'core_imports.dart';
 
 mixin IdbRecordSnapshotSqfliteMixin {}
 
@@ -38,10 +38,10 @@ class IdbIndexRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
   IdbIndexRecordSnapshotSqflite(IdbObjectStoreSqflite store, this.key,
       this._primaryKey, Map<String, Object?> row)
       : super(store, row);
-  final Object? _primaryKey;
+  Object? _primaryKey;
 
   @override
-  Object get primaryKey => _primaryKey ?? store.rowGetPrimaryKeyValue(row);
+  Object get primaryKey => _primaryKey ??= store.rowGetPrimaryKeyValue(row);
 
   @override
   final Object key;
@@ -189,36 +189,39 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
 
   List<String> get keyColumnNames;
 
-  T get newCursor;
+  T newCursor(int index);
 
   // Sync must be true
   final _ctlr = StreamController<T>(sync: true);
 
-  bool get currentIndexValid {
+  bool indexIsValid(int index) {
     var length = _rows.length;
 
-    return (currentIndex! >= 0) && (currentIndex! < length);
+    return (index >= 0) && (index < length);
   }
 
   /// false if it faield
   bool advance(int count) {
-    currentIndex = currentIndex! + count;
+    var index = currentIndex = currentIndex! + count;
+    var valid = indexIsValid(index);
     lock.synchronized(() {
-      if (!currentIndexValid) {
+      var valid = indexIsValid(index);
+      if (!valid) {
         // Prevent auto advance
         autoAdvance = false;
-        // endOperation();
-        // pure async
 
-        _ctlr.close();
+        // Make sure the last action is done
+        lock.synchronized(() {
+          _ctlr.close();
+        });
         return false;
       } else {
-        _ctlr.add(newCursor);
+        _ctlr.add(newCursor(index));
         // return new Future.value();
         return true;
       }
     });
-    return currentIndexValid;
+    return valid;
   }
 
   @override
@@ -247,7 +250,7 @@ abstract class _IdbKeyCursorBaseControllerSqflite
   _IdbKeyCursorBaseControllerSqflite(super.direction, super.autoAdvance);
 
   @override
-  Cursor get newCursor => _IdbCursorSqflite(this, _rows[currentIndex!]);
+  Cursor newCursor(int index) => _IdbCursorSqflite(this, _rows[index]);
 }
 
 abstract class _IdbCursorWithValueBaseControllerSqflite
@@ -255,8 +258,8 @@ abstract class _IdbCursorWithValueBaseControllerSqflite
   _IdbCursorWithValueBaseControllerSqflite(super.direction, super.autoAdvance);
 
   @override
-  CursorWithValue get newCursor =>
-      _IdbCursorWithValueSqflite(this, _rows[currentIndex!]);
+  CursorWithValue newCursor(int index) =>
+      _IdbCursorWithValueSqflite(this, _rows[index]);
 }
 
 class IdbCursorWithValueControllerSqflite

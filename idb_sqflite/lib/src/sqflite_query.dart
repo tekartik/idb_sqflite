@@ -28,9 +28,14 @@ class SqfliteSelectQuery extends SqfliteQuery {
   final String? _direction;
   List<String> keyColumns;
   final int? limit;
+  // Build during buildParameters
+  String? _orderBy;
+  // Build during buildParameters
+  String? sqlWhere;
+  // Build during buildParameters
+  List<Object>? sqlWhereArgs;
 
-  Future<List<Map<String, Object?>>> execute(
-      IdbTransactionSqflite? transaction) {
+  void buildParameters() {
     String? order;
 
     if (_direction != null) {
@@ -146,16 +151,23 @@ class SqfliteSelectQuery extends SqfliteQuery {
     }
 
     // order not needed for COUNT(*)
-    String? orderBy;
     if (order != null) {
-      orderBy = keyColumns.map((column) => '$column $order').join(', ');
+      _orderBy = keyColumns.map((column) => '$column $order').join(', ');
     }
+    sqlWhere = sb.isEmpty ? null : sb.toString();
+    sqlWhereArgs = args;
+  }
+
+  Future<List<Map<String, Object?>>> execute(
+      IdbTransactionSqflite? transaction) {
+    buildParameters();
+
     //var sqlArgs = [encodeKey(key)];
     return transaction!.query(_sqlTableName,
         columns: columns,
-        where: sb.isEmpty ? null : sb.toString(),
-        whereArgs: args,
-        orderBy: orderBy,
+        where: sqlWhere,
+        whereArgs: sqlWhereArgs,
+        orderBy: _orderBy,
         limit: limit);
   }
 }

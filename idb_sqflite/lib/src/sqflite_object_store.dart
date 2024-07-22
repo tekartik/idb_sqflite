@@ -330,6 +330,14 @@ class IdbObjectStoreSqflite
     return row?.values.first as int?;
   }
 
+  // Unused for now
+  Future<List<int>> getPrimaryIds(KeyRange keyRange) async {
+    var select = SqfliteSelectQuery(
+        [sqliteRowId], sqlTableName, keyColumnNames, keyRange, null);
+    var rows = await select.execute(transaction);
+    return rows.map((row) => row[sqliteRowId] as int).toList();
+  }
+
   /// Return the primary key
   /// @deprecated once index is a table
   Future<Object?> getKeyImpl(Object key, [String? keyPath]) async {
@@ -356,23 +364,40 @@ class IdbObjectStoreSqflite
   }
 
   @override
-  Future<void> delete(Object key) {
+  Future<void> delete(Object keyOrRange) {
     return _checkWritableStore(() async {
-      await deleteImpl(key);
+      await deleteImpl(keyOrRange);
     });
   }
 
-  Future<void> deleteImpl(Object key) async {
-    // remove the index value
-    int? primaryId;
-    for (var index in _indecies) {
-      primaryId ??= await getPrimaryId(key);
-      await index.deleteKey(primaryId!);
+  Future<void> deleteImpl(Object keyOrRange) async {
+    if (keyOrRange is KeyRange) {
+      final query = SqfliteSelectQuery(
+          [sqliteRowId], sqlTableName, primaryKeyColumnNames, keyOrRange, null);
+      query.buildParameters();
+      await transaction.batch((batch) {
+        for (var index in _indecies) {
+          batch.delete(index.sqlIndexTableName,
+              where:
+                  '$primaryIdColumnName IN (SELECT $sqliteRowId FROM $sqlTableName${query.sqlWhere != null ? ' WHERE ${query.sqlWhere}' : ''})',
+              whereArgs: query.sqlWhereArgs);
+        }
+        batch.delete(sqlTableName,
+            where: query.sqlWhere, whereArgs: query.sqlWhereArgs);
+      });
+    } else {
+      var key = keyOrRange;
+      // remove the index value
+      var primaryId = await getPrimaryId(key);
+      await transaction.batch((batch) {
+        for (var index in _indecies) {
+          batch.delete(index.sqlIndexTableName,
+              where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
+        }
+        batch.delete(sqlTableName,
+            where: '$sqliteRowId = ?', whereArgs: [primaryId]);
+      });
     }
-
-    var condition = KeyPathWhere.pkEquals(this, key);
-    await transaction.delete(sqlTableName,
-        where: condition.where, whereArgs: condition.whereArgs);
   }
 
   @override
