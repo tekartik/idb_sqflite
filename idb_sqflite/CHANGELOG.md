@@ -1,6 +1,7 @@
-## 1.3.3+3
+## 1.3.3+4
 
 * sdb (Simple db) support.
+* add idbFactorySqflite (using default sqflite factory)
 
 ## 1.3.2+1
 
