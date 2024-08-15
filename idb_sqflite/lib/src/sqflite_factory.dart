@@ -11,14 +11,17 @@ const String idbFactoryNameSqflite = 'sqflite';
 
 /// idb_sqflite factory class
 class IdbFactorySqflite extends IdbFactoryBase {
+  /// idb_sqflite factory
   IdbFactorySqflite(this.sqfliteDatabaseFactory);
 
+  /// sqflite database factory
   final sqflite.DatabaseFactory sqfliteDatabaseFactory;
   @override
   bool get persistent => true;
 
-  // global store
   SqfliteGlobalStore? _globalStore;
+
+  /// global store
   SqfliteGlobalStore get globalStore =>
       _globalStore ??= SqfliteGlobalStore(sqfliteDatabaseFactory);
 

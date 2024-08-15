@@ -4,6 +4,7 @@ import 'package:idb_sqflite/idb_sqflite.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_test/idb_test_common.dart';
 
+/// Define the tests
 void defineTests(IdbFactory? factory) {
   group('impl', () {
     test('open_transaction_open', () async {
@@ -107,7 +108,6 @@ void defineTests(IdbFactory? factory) {
           var pk = await store.put({testNameField: 1234});
           var sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
           var list = await sqlDb.query('s__test_store');
-          print(list);
           expect(list, [
             {'pk': 1, 'v': '{"name":1234}'}
           ]);
@@ -161,7 +161,7 @@ void defineTests(IdbFactory? factory) {
         expect(await store.count(), insertCount * txnCount);
         db.close();
       },
-          timeout: Timeout(Duration(
+          timeout: const Timeout(Duration(
               minutes:
                   5))); // flutter: Warning database has been locked for 0:00:10.000000. Make sure you always use the transaction object for database operations during a transaction
     });

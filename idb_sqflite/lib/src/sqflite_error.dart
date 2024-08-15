@@ -1,10 +1,14 @@
 import 'package:idb_shim/idb_client.dart';
 
+/// Database error
 class IdbErrorSqflite extends DatabaseError {
+  /// Database error
   IdbErrorSqflite(this.errorCode, String message) : super(message);
 
+  /// Error code for missing key
   static final int missingKeyErrorCode = 3;
 
+  /// Error code
   int errorCode;
 
   @override
@@ -14,7 +18,9 @@ class IdbErrorSqflite extends DatabaseError {
   }
 }
 
+/// Database error
 class IdbDatabaseErrorSqflite extends DatabaseError {
+  /// Database error
   IdbDatabaseErrorSqflite(this._nativeError) : super('native');
 
   final Object? _nativeError;
@@ -39,6 +45,7 @@ bool _handleError(dynamic e) {
 // We no longer catch the native exception asynchronously
 // as it makes the stack trace lost...
 //
+/// Catch async sqflite error
 Future<T> catchAsyncSqfliteError<T>(Future<T> Function() action) async {
   try {
     return await action();

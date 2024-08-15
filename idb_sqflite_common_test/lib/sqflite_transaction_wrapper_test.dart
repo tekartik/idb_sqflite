@@ -3,6 +3,7 @@ import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 import 'package:test/test.dart';
 
+/// Define the tests
 void defineTests(sqflite.DatabaseFactory factory) {
   late sqflite.Database db;
   setUp(() async {

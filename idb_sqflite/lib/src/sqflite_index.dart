@@ -12,39 +12,50 @@ import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
+/// Index implementation
 class IdbIndexSqflite
     with IdbSqfliteKeyPathMixin, IndexWithMetaMixin
     implements Index {
+  /// Index implementation
   IdbIndexSqflite(this.store, this.meta);
 
   @override
   Object? get primaryKeyPath => store.primaryKeyPath;
 
+  /// Store
   IdbObjectStoreSqflite store;
   @override
   final IdbIndexMeta meta;
 
+  /// index table name
   String get sqlIndexTableName => '${store.name}__$name';
 
   //String get sqlIndexName => sqlIndexTableName;
   // join view name
+  /// index view name
   String get sqlIndexViewName => '${sqlIndexTableName}__j';
 
+  /// Store table name
   String get sqlStoreTableName => store.sqlTableName;
 
+  /// key index name
   String get sqlKeyIndexName => '${sqlIndexTableName}__k';
 
+  /// primary key index name
   String get sqlPrimaryKeyIndexName => '${sqlIndexTableName}__pk';
 
+  /// key column name to sql index name
   String keyColumnNameToSqlIndexName(String keyColumnName) =>
       '${sqlIndexTableName}__$keyColumnName';
 
-  // Ordered keys
+  /// Ordered keys
   final keys = <dynamic>[];
 
+  /// Transaction
   IdbTransactionSqflite? get transaction => store.transaction;
 
-  Future create() async {
+  /// Create the index
+  Future<void> create() async {
     if (multiEntry && isCompositeKey) {
       throw UnsupportedError(
           'Having multiEntry and multiKey path is not supported');
@@ -90,6 +101,7 @@ class IdbIndexSqflite
     });
   }
 
+  /// Drop the index
   void drop(sqflite.Batch batch) {
     batch.execute('DROP TABLE IF EXISTS $sqlIndexTableName');
     batch.execute('DROP VIEW IF EXISTS $sqlIndexViewName');
@@ -183,12 +195,14 @@ class IdbIndexSqflite
     return ctlr.stream;
   }
 
+  /// Insert a key
   Future insertKey(int primaryId, dynamic keyValue) async {
     await transaction!.batch((batch) {
       insertKeyBatch(batch, primaryId, keyValue);
     });
   }
 
+  /// Insert a key in a batch
   void insertKeyBatch(sqflite.Batch batch, int? primaryId, dynamic keyValue) {
     if (keyValue != null) {
       if (multiEntry) {
@@ -228,6 +242,7 @@ class IdbIndexSqflite
     return encodeKey(key);
   }
 
+  /// Update a key
   Future updateKey(int primaryId, dynamic keyValue) async {
     await transaction!.batch((batch) {
       batch.delete(sqlIndexTableName,
@@ -236,6 +251,7 @@ class IdbIndexSqflite
     });
   }
 
+  /// Delete a key
   Future deleteKey(int primaryId) async {
     await transaction!.batch((batch) {
       batch.delete(sqlIndexTableName,

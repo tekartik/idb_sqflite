@@ -6,15 +6,21 @@ import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:sqflite_common/utils/utils.dart';
 
+/// Sql query
 class SqfliteQuery {
+  /// Sql query
   late String sqlStatement;
+
+  /// Sql arguments
   List<Object>? arguments;
 }
 
 const String _sqlCountColumnName = '_COUNT';
 const _sqlCount = 'COUNT(*) AS $_sqlCountColumnName';
 
+/// Select query
 class SqfliteSelectQuery extends SqfliteQuery {
+  /// Select query
   SqfliteSelectQuery(
       this.columns,
       this._sqlTableName,
@@ -22,19 +28,30 @@ class SqfliteSelectQuery extends SqfliteQuery {
       this.keyOrKeyRange,
       this._direction,
       {this.limit});
+
+  /// Columns
   List<String> columns;
   final String _sqlTableName;
+
+  /// key or key range
   Object? keyOrKeyRange;
   final String? _direction;
+
+  /// key columns
   List<String> keyColumns;
+
+  /// limit
   final int? limit;
   // Build during buildParameters
   String? _orderBy;
-  // Build during buildParameters
+
+  /// Built during buildParameters
   String? sqlWhere;
-  // Build during buildParameters
+
+  /// Built during buildParameters
   List<Object>? sqlWhereArgs;
 
+  /// Build the parameters
   void buildParameters() {
     String? order;
 
@@ -75,7 +92,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
           // last
           if (i == keyColumns.length - 1) {
-            if (keyRange.lowerOpen == true) {
+            if (keyRange.lowerOpen) {
               sbLower.write('$column > ?');
             } else {
               sbLower.write('$column >= ?');
@@ -102,7 +119,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
           // last
           if (i == keyColumns.length - 1) {
-            if (keyRange.upperOpen == true) {
+            if (keyRange.upperOpen) {
               sbUpper.write('$column < ?');
             } else {
               sbUpper.write('$column <= ?');
@@ -158,6 +175,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
     sqlWhereArgs = args;
   }
 
+  /// Execute the query
   Future<List<Map<String, Object?>>> execute(
       IdbTransactionSqflite? transaction) {
     buildParameters();
@@ -172,7 +190,9 @@ class SqfliteSelectQuery extends SqfliteQuery {
   }
 }
 
+/// Count query
 class SqfliteCountQuery extends SqfliteSelectQuery {
+  /// Count query
   SqfliteCountQuery(
       String sqlTableName, List<String> keyColumns, Object? keyOrKeyRange) //
       : super(
@@ -183,6 +203,7 @@ class SqfliteCountQuery extends SqfliteSelectQuery {
           null,
         );
 
+  /// Count
   Future<int> count(IdbTransactionSqflite? transaction) async {
     var rows = await execute(transaction);
     return firstIntValue(rows)!;

@@ -4,9 +4,12 @@ import 'package:idb_sqflite/src/idb_import.dart';
 import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
-var debugTransactionWrapper = false; // devWarning(true);
+/// internal
+const debugTransactionWrapper = false; // devWarning(true);
 
+/// Transaction wrapper
 class SqfliteTransactionWrapper {
+  /// Transaction wrapper
   SqfliteTransactionWrapper(this.sqfliteDatabase) {
     () async {
       try {
@@ -48,13 +51,17 @@ class SqfliteTransactionWrapper {
     }
   }
 
+  /// sqflite database
   final sqflite.Database? sqfliteDatabase;
 
   final _transactionReadyCompleter = Completer<sqflite.Transaction>.sync();
   final _operationsCompleter = Completer<bool>.sync();
 
+  /// sqflite transaction
   Future<sqflite.Transaction> get sqfliteTransaction =>
       _transactionReadyCompleter.future;
+
+  /// Completed exception
   Exception? completedException;
 
   /*
@@ -64,6 +71,7 @@ class SqfliteTransactionWrapper {
   static List<Object> EMPTY_ARGS = [];
   */
 
+  /// Commit
   void commit() {
     if (debugTransactionWrapper) {
       if (_operationCount != null) {
@@ -87,18 +95,21 @@ class SqfliteTransactionWrapper {
   */
   final _completer = Completer<SqfliteTransactionWrapper>();
 
+  /// Completer
   void asyncCompleteOperationsIfDone() {
     if (_operationCount == 0) {
       Future(completeOperationsIfDone);
     }
   }
 
+  /// Completer
   void completeOperationsIfDone() {
     if (_operationCount == 0) {
       completeOperations();
     }
   }
 
+  /// Completer
   void completeOperations() {
     // idbDevPrint('completeOperation $_operationCount');
     if (_operationCount != null) {
@@ -112,6 +123,7 @@ class SqfliteTransactionWrapper {
     }
   }
 
+  /// Future to complete
   Future<SqfliteTransactionWrapper> get completed async {
     // Wait for ready first
     await sqfliteTransaction;
@@ -122,6 +134,7 @@ class SqfliteTransactionWrapper {
 
   int? _operationCount = 0;
 
+  /// Run an action
   Future<T> run<T>(Future<T> Function(sqflite.Transaction) action) async {
     beginOperation();
     try {
@@ -132,10 +145,12 @@ class SqfliteTransactionWrapper {
     }
   }
 
+  /// Raw query
   Future<List<Map<String, Object?>>> rawQuery(String sql,
           [List<dynamic>? arguments]) =>
       run((txn) => txn.rawQuery(sql, arguments as List<Object>?));
 
+  /// Begin operation
   void beginOperation() {
     if (_operationCount == null) {
       throw IdbDatabaseErrorSqflite('TransactionInactiveError');
@@ -144,6 +159,7 @@ class SqfliteTransactionWrapper {
     // idbDevPrint('_beginOperation $_operationCount');
   }
 
+  /// End operation
   void endOperation() {
     // idbDevPrint('_endOperation $_operationCount');
     _operationCount = _operationCount! - 1;
@@ -152,6 +168,7 @@ class SqfliteTransactionWrapper {
     asyncCompleteOperationsIfDone();
   }
 
+  /// Abort
   void abort() {
     completedException = newAbortException();
   }

@@ -18,15 +18,20 @@ import 'package:idb_sqflite/src/sqflite_value.dart';
 
 import 'core_imports.dart';
 
+/// Object store implementation
 class IdbObjectStoreSqflite
     with IdbSqfliteKeyPathMixin, ObjectStoreWithMetaMixin
     implements ObjectStore {
+  /// Object store implementation
   IdbObjectStoreSqflite(this.transaction, this.meta);
 
+  /// Database
   IdbDatabaseSqflite get database => transaction.database as IdbDatabaseSqflite;
 
+  /// default column name
   static const String keyDefaultColumnName = primaryKeyColumnName;
 
+  /// Transaction
   final IdbTransactionSqflite transaction;
 
   @override
@@ -43,6 +48,7 @@ class IdbObjectStoreSqflite
   @override
   Object? get primaryKeyPath => keyPath;
 
+  /// sql column name
   String sqlColumnName(String? keyPath) {
     if (keyPath == null) {
       return keyDefaultColumnName;
@@ -51,15 +57,18 @@ class IdbObjectStoreSqflite
     }
   }
 
+  /// sql table name
   String get sqlTableName {
     return getSqlTableName(name);
   }
 
+  /// sql table name from store name
   static String getSqlTableName(String storeName) {
     return 's__$storeName';
   }
 
-  Future deleteTable(IdbTransactionSqflite transaction) {
+  /// Delete the store table
+  Future<void> deleteTable(IdbTransactionSqflite transaction) {
     return transaction.batch((batch) {
       batch.execute('DROP TABLE IF EXISTS $sqlTableName');
       // Drop index tables too
@@ -69,7 +78,8 @@ class IdbObjectStoreSqflite
     });
   }
 
-  Future update() async {
+  /// Update the store table
+  Future<void> update() async {
     var metaText = jsonEncode(meta!.toMap());
     await transaction.update(storesTable, {metaField: metaText},
         where: '$nameField = ?', whereArgs: [name]);
@@ -115,6 +125,7 @@ class IdbObjectStoreSqflite
     });
   }
 
+  /// sql index name
   String get compositePrimateKeyIndexName =>
       '${sqlTableName}__$primaryKeyColumnName';
 
@@ -131,6 +142,7 @@ class IdbObjectStoreSqflite
   }
 
   // Don't make it async as it must run before completed is called
+  /// Check the store is ready
   Future<T> checkStore<T>(Future<T> Function() computation) async {
     // this is also an indicator
     //if (!ready) {
@@ -175,6 +187,7 @@ class IdbObjectStoreSqflite
   Iterable<IdbIndexSqflite> get _indecies =>
       meta!.indecies.map((meta) => IdbIndexSqflite(this, meta));
 
+  /// Add a record
   Future<Object> addImpl(Object value, [Object? key]) async {
     Map? mapValue;
     if (value is Map) {
@@ -225,6 +238,7 @@ class IdbObjectStoreSqflite
         }));
   }
 
+  /// Put a record
   Future<Object> putImpl(Object value, [Object? key]) async {
     var values = <String, Object?>{valueColumnName: encodeValue(value)};
 
@@ -293,12 +307,14 @@ class IdbObjectStoreSqflite
     }
   }
 
+  /// Convert a row to a record
   Object valueRowToRecord(Object pk, Object row) {
     var value = fromSqfliteValue(decodeValue(row)!);
     _fixRecordValueWithPk(pk, value);
     return value;
   }
 
+  /// Get a record
   Future<Object?> getImpl(Object key) async {
     var row = await getFirstRow(key,
         columns: [...primaryKeyColumnNames, valueColumnName]);
@@ -330,7 +346,7 @@ class IdbObjectStoreSqflite
     return row?.values.first as int?;
   }
 
-  // Unused for now
+  /// Unused for now
   Future<List<int>> getPrimaryIds(KeyRange keyRange) async {
     var select = SqfliteSelectQuery(
         [sqliteRowId], sqlTableName, keyColumnNames, keyRange, null);
@@ -370,6 +386,7 @@ class IdbObjectStoreSqflite
     });
   }
 
+  /// Delete a record
   Future<void> deleteImpl(Object keyOrRange) async {
     if (keyOrRange is KeyRange) {
       final query = SqfliteSelectQuery(

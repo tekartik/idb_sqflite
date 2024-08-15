@@ -15,9 +15,12 @@ import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
+/// Sanitize the database name
 String sanitizeDbName(String name) => name;
 
+/// Change event
 class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
+  /// Create a change event
   IdbVersionChangeEventSqflite(
       IdbDatabaseSqflite database, int? oldVersion, this.newVersion) //
       : oldVersion = oldVersion ?? 0 {
@@ -32,6 +35,8 @@ class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
   final int oldVersion;
   @override
   final int newVersion;
+
+  /// The request
   late Request request;
 
   @override
@@ -50,21 +55,27 @@ class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
   }
 }
 
+/// Database
 class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
+  /// Create a database
   IdbDatabaseSqflite(super.factory, String name) {
     meta.name = name;
   }
 
+  /// The version change transaction
   IdbTransactionSqflite? versionChangeTransaction;
 
+  /// The sqflite factory
   sqflite.DatabaseFactory get sqfliteDatabaseFactory =>
       (super.factory as IdbFactorySqflite).sqfliteDatabaseFactory;
 
   @override
   IdbDatabaseMeta meta = IdbDatabaseMeta();
 
+  /// The sqflite database
   sqflite.Database? sqlDb;
 
+  /// apply schema changes
   Future applySchemaChanges(IdbOpenTransactionSqflite tx) async {
     final txnMeta = tx.meta
         as IdbVersionChangeTransactionMeta; // .versionChangeTransaction;
@@ -178,6 +189,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     }
   }
 
+  /// Open the database
   Future open(int? newVersion, OnUpgradeNeededFunction? onUpgradeNeeded) async {
     int? oldVersion;
 
@@ -355,8 +367,8 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     onVersionChangeCtlr?.close();
   }
 
-  // Only created when we asked for it
-  // singleton
+  /// Only created when we asked for it
+  /// singleton
   StreamController<VersionChangeEvent>? onVersionChangeCtlr;
 
   @override
