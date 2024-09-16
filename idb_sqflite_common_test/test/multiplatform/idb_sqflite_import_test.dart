@@ -48,7 +48,7 @@ void main() {
     test('web', () {
       try {
         idbFactoryNative;
-        if (!isRunningAsJavascript) {
+        if (!kIdbSqfliteIsWeb) {
           fail('should fail');
         }
       } on UnimplementedError catch (_) {}
@@ -59,7 +59,7 @@ void main() {
 
       try {
         idbFactorySembastIo;
-        if (isRunningAsJavascript) {
+        if (kIdbSqfliteIsWeb) {
           fail('should fail');
         }
       } on UnimplementedError catch (_) {}
