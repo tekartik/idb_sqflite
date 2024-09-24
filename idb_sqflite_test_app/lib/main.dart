@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'io/idb_io.dart' if (dart.library.html) 'web/idb_web.dart';
+import 'io/idb_io.dart' if (dart.library.js_interop) 'web/idb_web.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
