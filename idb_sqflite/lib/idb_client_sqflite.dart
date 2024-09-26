@@ -1,4 +1,4 @@
-library idb_client_sqflite;
+library;
 
 import 'package:idb_shim/idb.dart';
 import 'package:idb_sqflite/src/sqflite_factory.dart';
