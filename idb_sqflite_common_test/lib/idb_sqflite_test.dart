@@ -1,5 +1,3 @@
-import 'package:idb_shim/idb_client.dart';
-import 'package:idb_sqflite/idb_sqflite.dart';
 // ignore: implementation_imports
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_test/idb_test_common.dart';

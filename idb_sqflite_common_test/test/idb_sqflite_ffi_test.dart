@@ -1,7 +1,6 @@
 @TestOn('vm')
-library idb_sqflite_ffi_test;
+library;
 
-import 'package:idb_shim/idb_shim.dart';
 import 'package:idb_sqflite/idb_client_sqflite.dart';
 import 'package:idb_sqflite_common_test/idb_sqflite_test.dart'
     as idb_sqflite_test;

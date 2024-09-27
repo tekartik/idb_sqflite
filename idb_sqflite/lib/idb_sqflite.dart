@@ -1,4 +1,4 @@
-library idb_sqflite;
+library;
 
 export 'package:idb_shim/idb_shim.dart';
 

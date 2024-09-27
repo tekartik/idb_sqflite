@@ -1,4 +1,4 @@
-library idb_shim.sqflite_value_test;
+library;
 
 import 'dart:typed_data';
 
