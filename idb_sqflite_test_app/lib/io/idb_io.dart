@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 export 'package:idb_shim/idb_shim.dart';
 
+/// Get the idb factory
 IdbFactory get idbFactory {
   if (Platform.isLinux || Platform.isWindows) {
     sqfliteFfiInit();
