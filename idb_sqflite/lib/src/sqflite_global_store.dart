@@ -1,4 +1,5 @@
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
+import 'package:sqflite_common/utils/utils.dart';
 
 /// Global store
 final String globalStoreDbName = 'com.tekartik.idb.global_store';
@@ -42,12 +43,19 @@ class SqfliteGlobalStore {
   /// Return true if added
   Future<bool> addDatabaseName(String name) async {
     var db = await database;
-    try {
-      await db.insert(databaseTable, {'name': name});
+    return await db.transaction((txn) async {
+      // Find if it exists
+      var exists = firstIntValue(await txn.query(databaseTable,
+              columns: [sqlCountColumn],
+              where: 'name = ?',
+              whereArgs: [name]))! >
+          0;
+      if (exists) {
+        return false;
+      }
+      await txn.insert(databaseTable, {'name': name});
       return true;
-    } catch (e) {
-      return false;
-    }
+    });
   }
 
   /// Delete a database name
