@@ -1,7 +1,8 @@
-## 1.3.3+6
+## 1.3.3+7
 
 * sdb (Simple db) support.
 * add idbFactorySqflite (using default sqflite factory)
+* Check whether a database exists before adding it to the global store database
 
 ## 1.3.2+1
 
