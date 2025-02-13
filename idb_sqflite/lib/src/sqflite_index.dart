@@ -58,27 +58,32 @@ class IdbIndexSqflite
   Future<void> create() async {
     if (multiEntry && isCompositeKey) {
       throw UnsupportedError(
-          'Having multiEntry and multiKey path is not supported');
+        'Having multiEntry and multiKey path is not supported',
+      );
     }
 
     // For multi entry we create a new table instead of an index
     await transaction!.batch((batch) {
       var tableName = sqlIndexTableName;
-      batch.execute('CREATE TABLE $tableName ('
-          // key BLOB or key1 BLOB, key2 BLOB...
-          '${keyColumnNames.map((name) => '$name BLOB').join(', ')}, '
-          '$primaryIdColumnName BLOB)');
+      batch.execute(
+        'CREATE TABLE $tableName ('
+        // key BLOB or key1 BLOB, key2 BLOB...
+        '${keyColumnNames.map((name) => '$name BLOB').join(', ')}, '
+        '$primaryIdColumnName BLOB)',
+      );
       // 'FOREIGN KEY ($primaryIdColumnName) REFERENCES $sqlStoreTableName($sqliteRowId) ON DELETE CASCADE)');
 
       batch.execute(
-          'CREATE VIEW $sqlIndexViewName AS SELECT ${keyColumnNames.join(', ')}, ${primaryKeyColumnNames.join(', ')}, $valueColumnName '
-          'FROM $tableName INNER JOIN $sqlStoreTableName ON $tableName.$primaryIdColumnName = $sqlStoreTableName.$sqliteRowId');
+        'CREATE VIEW $sqlIndexViewName AS SELECT ${keyColumnNames.join(', ')}, ${primaryKeyColumnNames.join(', ')}, $valueColumnName '
+        'FROM $tableName INNER JOIN $sqlStoreTableName ON $tableName.$primaryIdColumnName = $sqlStoreTableName.$sqliteRowId',
+      );
       if (isCompositeKey) {
         // Create index on each key
         for (var i = 0; i < compositeKeyCount; i++) {
           var keyColumnName = keyIndexToKeyName(i);
           batch.execute(
-              'CREATE INDEX ${keyColumnNameToSqlIndexName(keyColumnName)} ON $tableName ($keyColumnName)');
+            'CREATE INDEX ${keyColumnNameToSqlIndexName(keyColumnName)} ON $tableName ($keyColumnName)',
+          );
         }
       }
       // Create index on all keys
@@ -88,16 +93,18 @@ class IdbIndexSqflite
         sb.write('UNIQUE ');
       }
       sb.write(
-          'INDEX ${keyColumnNameToSqlIndexName(keyColumnName)} ON $tableName '
-          // (k) or (k1, k2)
-          '(${keyColumnNames.join(', ')})');
+        'INDEX ${keyColumnNameToSqlIndexName(keyColumnName)} ON $tableName '
+        // (k) or (k1, k2)
+        '(${keyColumnNames.join(', ')})',
+      );
 
       batch.execute(sb.toString());
 
       // ...and on the couple key/primaryKey
 
       batch.execute(
-          'CREATE INDEX ${keyColumnNameToSqlIndexName(primaryIdColumnName)} ON $tableName (${keyColumnNames.join(', ')}, $primaryIdColumnName)');
+        'CREATE INDEX ${keyColumnNameToSqlIndexName(primaryIdColumnName)} ON $tableName (${keyColumnNames.join(', ')}, $primaryIdColumnName)',
+      );
     });
   }
 
@@ -124,25 +131,33 @@ class IdbIndexSqflite
   Future get(Object key) {
     checkKeyParam(key);
     return _checkIndex(() async {
-      var row = await getFirstRow(key,
-          columns: [...primaryKeyColumnNames, valueColumnName]);
+      var row = await getFirstRow(
+        key,
+        columns: [...primaryKeyColumnNames, valueColumnName],
+      );
       if (row == null) {
         return null;
       }
       return store.valueRowToRecord(
-          store.rowGetPrimaryKeyValue(row), row[valueColumnName]!);
+        store.rowGetPrimaryKeyValue(row),
+        row[valueColumnName]!,
+      );
     });
   }
 
   /// Returns null if not found
-  Future<Map<String, Object?>?> getFirstRow(Object key,
-      {List<String>? columns}) async {
+  Future<Map<String, Object?>?> getFirstRow(
+    Object key, {
+    List<String>? columns,
+  }) async {
     var condition = KeyPathWhere.keyEquals(this, key);
-    var rows = await transaction!.query(sqlIndexViewName,
-        columns: columns,
-        where: condition.where,
-        whereArgs: condition.whereArgs,
-        limit: 1);
+    var rows = await transaction!.query(
+      sqlIndexViewName,
+      columns: columns,
+      where: condition.where,
+      whereArgs: condition.whereArgs,
+      limit: 1,
+    );
     if (rows.isEmpty) {
       return null;
     }
@@ -167,10 +182,17 @@ class IdbIndexSqflite
   }
 
   @override
-  Stream<Cursor> openKeyCursor(
-      {key, KeyRange? range, String? direction, bool? autoAdvance}) {
+  Stream<Cursor> openKeyCursor({
+    key,
+    KeyRange? range,
+    String? direction,
+    bool? autoAdvance,
+  }) {
     var ctlr = IdbIndexKeyCursorControllerSqflite(
-        this, direction ?? idbDirectionNext, autoAdvance ?? false);
+      this,
+      direction ?? idbDirectionNext,
+      autoAdvance ?? false,
+    );
 
     checkOpenCursorArguments(key, range);
     // Future
@@ -181,10 +203,17 @@ class IdbIndexSqflite
   }
 
   @override
-  Stream<CursorWithValue> openCursor(
-      {key, KeyRange? range, String? direction, bool? autoAdvance}) {
+  Stream<CursorWithValue> openCursor({
+    key,
+    KeyRange? range,
+    String? direction,
+    bool? autoAdvance,
+  }) {
     var ctlr = IdbIndexCursorWithValueControllerSqflite(
-        this, direction ?? idbDirectionNext, autoAdvance ?? false);
+      this,
+      direction ?? idbDirectionNext,
+      autoAdvance ?? false,
+    );
 
     checkOpenCursorArguments(key, range);
 
@@ -212,7 +241,7 @@ class IdbIndexSqflite
             key = encodeKey(key!);
             var map = <String, Object?>{
               primaryIdColumnName: primaryId,
-              keyColumnName: key
+              keyColumnName: key,
             };
             batch.insert(sqlIndexTableName, map);
           }
@@ -245,8 +274,11 @@ class IdbIndexSqflite
   /// Update a key
   Future updateKey(int primaryId, dynamic keyValue) async {
     await transaction!.batch((batch) {
-      batch.delete(sqlIndexTableName,
-          where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
+      batch.delete(
+        sqlIndexTableName,
+        where: '$primaryIdColumnName = ?',
+        whereArgs: [primaryId],
+      );
       insertKeyBatch(batch, primaryId, keyValue);
     });
   }
@@ -254,8 +286,11 @@ class IdbIndexSqflite
   /// Delete a key
   Future deleteKey(int primaryId) async {
     await transaction!.batch((batch) {
-      batch.delete(sqlIndexTableName,
-          where: '$primaryIdColumnName = ?', whereArgs: [primaryId]);
+      batch.delete(
+        sqlIndexTableName,
+        where: '$primaryIdColumnName = ?',
+        whereArgs: [primaryId],
+      );
     });
   }
 
@@ -266,12 +301,20 @@ class IdbIndexSqflite
       var columns = [valueColumnName];
       var keyColumnNames = this.keyColumnNames;
       var selectQuery = SqfliteSelectQuery(
-          columns, tableName, keyColumnNames, query, idbDirectionNext,
-          limit: count);
+        columns,
+        tableName,
+        keyColumnNames,
+        query,
+        idbDirectionNext,
+        limit: count,
+      );
       return selectQuery.execute(transaction).then((rs) {
         return rs
-            .map((row) =>
-                fromSqfliteValue(decodeValue(row[valueColumnName] as Object)!))
+            .map(
+              (row) => fromSqfliteValue(
+                decodeValue(row[valueColumnName] as Object)!,
+              ),
+            )
             .toList(growable: false);
       });
     });
@@ -284,8 +327,13 @@ class IdbIndexSqflite
       var columns = primaryKeyColumnNames;
       var keyColumnNames = this.keyColumnNames;
       var selectQuery = SqfliteSelectQuery(
-          columns, tableName, keyColumnNames, query, idbDirectionNext,
-          limit: count);
+        columns,
+        tableName,
+        keyColumnNames,
+        query,
+        idbDirectionNext,
+        limit: count,
+      );
       return selectQuery.execute(transaction).then((rs) {
         return rs
             .map((row) => rowGetPrimaryKeyValue(row))

@@ -22,7 +22,7 @@ class IdbTransactionSqflite extends IdbTransactionBase
     with TransactionWithMetaMixin {
   /// Transaction
   IdbTransactionSqflite(IdbDatabaseSqflite database, this.meta)
-      : super(database) {
+    : super(database) {
     _txn = SqfliteTransactionWrapper(database.sqlDb);
 
     // Mark complete as soon as possible
@@ -42,7 +42,9 @@ class IdbTransactionSqflite extends IdbTransactionBase
   ObjectStore objectStore(String name) {
     meta!.checkObjectStore(name);
     return IdbObjectStoreSqflite(
-        this, idbDatabaseSqflite.meta.getObjectStore(name));
+      this,
+      idbDatabaseSqflite.meta.getObjectStore(name),
+    );
   }
 
   @override
@@ -65,29 +67,39 @@ class IdbTransactionSqflite extends IdbTransactionBase
       _txn.run((txn) => txn.insert(table, values));
 
   /// Query
-  Future<List<Map<String, Object?>>> query(String table,
-          {List<String>? columns,
-          String? where,
-          List<Object>? whereArgs,
-          String? orderBy,
-          int? limit}) =>
-      _txn.run((txn) => txn.query(table,
-          columns: columns,
-          where: where,
-          whereArgs: whereArgs,
-          limit: limit,
-          orderBy: orderBy));
+  Future<List<Map<String, Object?>>> query(
+    String table, {
+    List<String>? columns,
+    String? where,
+    List<Object>? whereArgs,
+    String? orderBy,
+    int? limit,
+  }) => _txn.run(
+    (txn) => txn.query(
+      table,
+      columns: columns,
+      where: where,
+      whereArgs: whereArgs,
+      limit: limit,
+      orderBy: orderBy,
+    ),
+  );
 
   /// Update
-  Future<int> update(String table, Map<String, Object?> values,
-          {String? where, List<Object>? whereArgs}) =>
-      _txn.run((txn) =>
-          txn.update(table, values, where: where, whereArgs: whereArgs));
+  Future<int> update(
+    String table,
+    Map<String, Object?> values, {
+    String? where,
+    List<Object>? whereArgs,
+  }) => _txn.run(
+    (txn) => txn.update(table, values, where: where, whereArgs: whereArgs),
+  );
 
   /// Raw query
   Future<List<Map<String, Object?>>> rawQuery(
-          String sqlSelect, List<Object>? args) =>
-      _txn.run((txn) => txn.rawQuery(sqlSelect, args));
+    String sqlSelect,
+    List<Object>? args,
+  ) => _txn.run((txn) => txn.rawQuery(sqlSelect, args));
 
   /// Delete
   Future<int> delete(String table, {String? where, List<Object>? whereArgs}) =>

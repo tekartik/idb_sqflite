@@ -28,8 +28,9 @@ Future main() async {
   group('big insert/query', () {
     var sqfliteDatabaseFactory = ffi.databaseFactoryFfiNoIsolate;
     // sqfliteDatabaseFactory.debugSetLogLevel(sqfliteLogLevelVerbose);
-    var factory =
-        getIdbFactorySqflite(sqfliteDatabaseFactory); // idbFactoryNative;
+    var factory = getIdbFactorySqflite(
+      sqfliteDatabaseFactory,
+    ); // idbFactoryNative;
 
     var objectStoreName = 'test';
 
@@ -52,11 +53,14 @@ Future main() async {
 
     Future<void> testAll(IdbFactory factory, {int count = 100000}) async {
       // var sw = Stopwatch()..start();
-      var db = await factory.open(inMemoryDatabasePath, version: 1,
-          onUpgradeNeeded: (vce) {
-        var db = vce.database;
-        db.createObjectStore(objectStoreName, autoIncrement: true);
-      });
+      var db = await factory.open(
+        inMemoryDatabasePath,
+        version: 1,
+        onUpgradeNeeded: (vce) {
+          var db = vce.database;
+          db.createObjectStore(objectStoreName, autoIncrement: true);
+        },
+      );
       await testInsert(db, count: count);
       await testQuery(db, count: count);
       db.close();

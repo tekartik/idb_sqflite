@@ -11,12 +11,15 @@ Future main() async {
   const storeName = 'records';
 
   // open the database
-  var db = await factory.open('my_records.db', version: 1,
-      onUpgradeNeeded: (VersionChangeEvent event) {
-    var db = event.database;
-    // create the store
-    db.createObjectStore(storeName, autoIncrement: true);
-  });
+  var db = await factory.open(
+    'my_records.db',
+    version: 1,
+    onUpgradeNeeded: (VersionChangeEvent event) {
+      var db = event.database;
+      // create the store
+      db.createObjectStore(storeName, autoIncrement: true);
+    },
+  );
 
   // put some data
   var txn = db.transaction(storeName, 'readwrite');

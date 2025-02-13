@@ -69,9 +69,10 @@ Object toSqfliteValue(Object value) {
     converted = _toSqfliteValue(value)!;
   } on ArgumentError catch (e) {
     throw ArgumentError.value(
-        e.invalidValue,
-        '${(e.invalidValue as Object?).runtimeType} in $value',
-        'not supported');
+      e.invalidValue,
+      '${(e.invalidValue as Object?).runtimeType} in $value',
+      'not supported',
+    );
   }
 
   /// Ensure root is Map<String, Object?> if only Map
@@ -140,9 +141,10 @@ Object fromSqfliteValue(Object value) {
     converted = _fromSqfliteValue(value)!;
   } on ArgumentError catch (e) {
     throw ArgumentError.value(
-        e.invalidValue,
-        '${(e.invalidValue as Object?).runtimeType} in $value',
-        'not supported');
+      e.invalidValue,
+      '${(e.invalidValue as Object?).runtimeType} in $value',
+      'not supported',
+    );
   }
 
   /// Ensure root is Map<String, Object?> if only Map

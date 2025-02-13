@@ -15,8 +15,9 @@ class KeyPathWhere {
 
   /// Create a where clause for a primary key
   factory KeyPathWhere.pkEquals(IdbSqfliteKeyPathMixin keyPath, Object key) {
-    var where =
-        keyPath.primaryKeyColumnNames.map((name) => '$name = ?').join(' AND ');
+    var where = keyPath.primaryKeyColumnNames
+        .map((name) => '$name = ?')
+        .join(' AND ');
     var whereArgs = itemOrItemsToList(key)!.cast<Object>();
     return KeyPathWhere(where, whereArgs);
   }
@@ -52,15 +53,19 @@ mixin IdbSqfliteKeyPathMixin implements IdbSqfliteKeyPath {
   String get primaryKeyColumn => primaryKeyColumnName;
 
   /// ['pk'] ok ['pk1', 'pk2'...]
-  late final primaryKeyColumnNames = isPrimaryCompositeKey
-      ? List.generate(
-          primaryCompositeKeyCount, (i) => primaryKeyIndexToKeyName(i))
-      : [primaryKeyColumnName];
+  late final primaryKeyColumnNames =
+      isPrimaryCompositeKey
+          ? List.generate(
+            primaryCompositeKeyCount,
+            (i) => primaryKeyIndexToKeyName(i),
+          )
+          : [primaryKeyColumnName];
 
   /// ['k'] ok ['k1', 'k2'...]
-  late final keyColumnNames = isCompositeKey
-      ? List.generate(compositeKeyCount, (i) => keyIndexToKeyName(i))
-      : [keyColumnName];
+  late final keyColumnNames =
+      isCompositeKey
+          ? List.generate(compositeKeyCount, (i) => keyIndexToKeyName(i))
+          : [keyColumnName];
 
   /// Get the primate key value from a row
   Object rowGetPrimaryKeyValue(Map row) {

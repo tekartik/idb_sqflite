@@ -16,8 +16,11 @@ void defineTests(IdbFactory? factory) {
           db.createObjectStore('name', keyPath: 'keyPath', autoIncrement: true);
         }
 
-        db = await factory.open(dbName,
-            version: 1, onUpgradeNeeded: initializeDatabase);
+        db = await factory.open(
+          dbName,
+          version: 1,
+          onUpgradeNeeded: initializeDatabase,
+        );
         // Create a transaction and close right away
         db.transaction('name', idbModeReadOnly);
 
@@ -37,16 +40,24 @@ void defineTests(IdbFactory? factory) {
       test('extra_table', () async {
         void initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
-          var objectStore =
-              db.createObjectStore(testStoreName, autoIncrement: true);
-          objectStore.createIndex(testNameIndex, testNameField,
-              multiEntry: true);
+          var objectStore = db.createObjectStore(
+            testStoreName,
+            autoIncrement: true,
+          );
+          objectStore.createIndex(
+            testNameIndex,
+            testNameField,
+            multiEntry: true,
+          );
         }
 
         var name = 'impl_multi_entry';
         await factory!.deleteDatabase(name);
-        var db = await factory.open(name,
-            version: 1, onUpgradeNeeded: initializeDatabase);
+        var db = await factory.open(
+          name,
+          version: 1,
+          onUpgradeNeeded: initializeDatabase,
+        );
 
         var sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
         var list = await sqlDb.query('sqlite_master');
@@ -54,23 +65,28 @@ void defineTests(IdbFactory? factory) {
         var names = list.map((item) => item['name']);
         // print(names.join(','));
         expect(
-            names,
-            containsAll([
-              '__version',
-              '__stores',
-              's__test_store',
-              'test_store__name_index',
-              'test_store__name_index__j',
-              'test_store__name_index__k',
-              'test_store__name_index__pid'
-            ]));
+          names,
+          containsAll([
+            '__version',
+            '__stores',
+            's__test_store',
+            'test_store__name_index',
+            'test_store__name_index__j',
+            'test_store__name_index__k',
+            'test_store__name_index__pid',
+          ]),
+        );
         db.close();
 
         // Make sure the table get deleted
-        db = await factory.open(name, version: 2, onUpgradeNeeded: (e) {
-          var db = e.database;
-          db.deleteObjectStore(testStoreName);
-        });
+        db = await factory.open(
+          name,
+          version: 2,
+          onUpgradeNeeded: (e) {
+            var db = e.database;
+            db.deleteObjectStore(testStoreName);
+          },
+        );
         sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
         list = await sqlDb.query('sqlite_master');
 
@@ -90,15 +106,20 @@ void defineTests(IdbFactory? factory) {
       test('content', () async {
         void initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
-          var objectStore =
-              db.createObjectStore(testStoreName, autoIncrement: true);
+          var objectStore = db.createObjectStore(
+            testStoreName,
+            autoIncrement: true,
+          );
           objectStore.createIndex(testNameIndex, testNameField);
         }
 
         var name = 'impl_multi_entry';
         await factory!.deleteDatabase(name);
-        var db = await factory.open(name,
-            version: 1, onUpgradeNeeded: initializeDatabase);
+        var db = await factory.open(
+          name,
+          version: 1,
+          onUpgradeNeeded: initializeDatabase,
+        );
 
         try {
           var txn = db.transaction(testStoreName, idbModeReadWrite);
@@ -107,11 +128,11 @@ void defineTests(IdbFactory? factory) {
           var sqlDb = (db as IdbDatabaseSqflite).sqlDb!;
           var list = await sqlDb.query('s__test_store');
           expect(list, [
-            {'pk': 1, 'v': '{"name":1234}'}
+            {'pk': 1, 'v': '{"name":1234}'},
           ]);
           list = await sqlDb.query('test_store__name_index');
           expect(list, [
-            {'k': 1234, 'pid': 1}
+            {'k': 1234, 'pid': 1},
           ]);
           await txn.completed;
           txn = db.transaction(testStoreName, idbModeReadWrite);
@@ -124,44 +145,48 @@ void defineTests(IdbFactory? factory) {
         }
       });
 
-      test('parallel_multi_insert', () async {
-        var txnCount = 4;
-        var insertCount = 1000;
-        void initializeDatabase(VersionChangeEvent e) {
-          var db = e.database;
-          db.createObjectStore(testStoreName);
-        }
-
-        var name = 'parallel_multi_insert';
-        await factory!.deleteDatabase(name);
-        var db = await factory.open(name,
-            version: 1, onUpgradeNeeded: initializeDatabase);
-        var id = 1;
-        Future insert(int count) async {
-          var txn = db.transaction(testStoreName, idbModeReadWrite);
-          var store = txn.objectStore(testStoreName);
-          var list = List.generate(count, (index) => {'value': id}).toList();
-          // Put object in parallel
-          for (var obj in list) {
-            // ignore: unawaited_futures
-            store.put(obj, ++id);
+      test(
+        'parallel_multi_insert',
+        () async {
+          var txnCount = 4;
+          var insertCount = 1000;
+          void initializeDatabase(VersionChangeEvent e) {
+            var db = e.database;
+            db.createObjectStore(testStoreName);
           }
-          await txn.completed;
-        }
 
-        // Call insert in parallel
-        var futures =
-            List.generate(txnCount, (i) => insert(insertCount)).toList();
-        await Future.wait(futures);
-        var txn = db.transaction(testStoreName, idbModeReadOnly);
-        var store = txn.objectStore(testStoreName);
-        // Verify everything was inserted
-        expect(await store.count(), insertCount * txnCount);
-        db.close();
-      },
-          timeout: const Timeout(Duration(
-              minutes:
-                  5))); // flutter: Warning database has been locked for 0:00:10.000000. Make sure you always use the transaction object for database operations during a transaction
+          var name = 'parallel_multi_insert';
+          await factory!.deleteDatabase(name);
+          var db = await factory.open(
+            name,
+            version: 1,
+            onUpgradeNeeded: initializeDatabase,
+          );
+          var id = 1;
+          Future insert(int count) async {
+            var txn = db.transaction(testStoreName, idbModeReadWrite);
+            var store = txn.objectStore(testStoreName);
+            var list = List.generate(count, (index) => {'value': id}).toList();
+            // Put object in parallel
+            for (var obj in list) {
+              // ignore: unawaited_futures
+              store.put(obj, ++id);
+            }
+            await txn.completed;
+          }
+
+          // Call insert in parallel
+          var futures =
+              List.generate(txnCount, (i) => insert(insertCount)).toList();
+          await Future.wait(futures);
+          var txn = db.transaction(testStoreName, idbModeReadOnly);
+          var store = txn.objectStore(testStoreName);
+          // Verify everything was inserted
+          expect(await store.count(), insertCount * txnCount);
+          db.close();
+        },
+        timeout: const Timeout(Duration(minutes: 5)),
+      ); // flutter: Warning database has been locked for 0:00:10.000000. Make sure you always use the transaction object for database operations during a transaction
     });
   });
 }

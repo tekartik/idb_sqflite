@@ -146,9 +146,10 @@ class SqfliteTransactionWrapper {
   }
 
   /// Raw query
-  Future<List<Map<String, Object?>>> rawQuery(String sql,
-          [List<dynamic>? arguments]) =>
-      run((txn) => txn.rawQuery(sql, arguments as List<Object>?));
+  Future<List<Map<String, Object?>>> rawQuery(
+    String sql, [
+    List<dynamic>? arguments,
+  ]) => run((txn) => txn.rawQuery(sql, arguments as List<Object>?));
 
   /// Begin operation
   void beginOperation() {

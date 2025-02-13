@@ -7,9 +7,7 @@ import 'io/idb_io.dart' if (dart.library.js_interop) 'web/idb_web.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   var bloc = MyAppBloc();
-  runApp(MyApp(
-    bloc: bloc,
-  ));
+  runApp(MyApp(bloc: bloc));
 }
 
 var storeName = 'counter';
@@ -28,11 +26,14 @@ class MyAppBloc {
   }
 
   Future<Database> database = () async {
-    var db =
-        await idbFactory.open('counter.db', version: 1, onUpgradeNeeded: (e) {
-      var db = e.database;
-      db.createObjectStore(storeName);
-    });
+    var db = await idbFactory.open(
+      'counter.db',
+      version: 1,
+      onUpgradeNeeded: (e) {
+        var db = e.database;
+        db.createObjectStore(storeName);
+      },
+    );
     return db;
   }();
 
@@ -74,10 +75,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(
-        title: 'Flutter Demo Home Page',
-        bloc: bloc,
-      ),
+      home: MyHomePage(title: 'Flutter Demo Home Page', bloc: bloc),
     );
   }
 }
@@ -107,38 +105,40 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<int?>(
-        stream: widget.bloc.counter,
-        builder: (context, snapshot) {
-          var count = snapshot.data;
-          return Scaffold(
-            appBar: AppBar(
-              // Here we take the value from the MyHomePage object that was created by
-              // the App.build method, and use it to set our appbar title.
-              title: Text(widget.title!),
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Text(
-                    'You have pushed the button this many times:',
+      stream: widget.bloc.counter,
+      builder: (context, snapshot) {
+        var count = snapshot.data;
+        return Scaffold(
+          appBar: AppBar(
+            // Here we take the value from the MyHomePage object that was created by
+            // the App.build method, and use it to set our appbar title.
+            title: Text(widget.title!),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const Text('You have pushed the button this many times:'),
+                if (count != null)
+                  Text(
+                    '$count',
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  if (count != null)
-                    Text('$count',
-                        style: Theme.of(context).textTheme.headlineSmall)
-                ],
-              ),
+              ],
             ),
-            floatingActionButton: count != null
-                ? FloatingActionButton(
+          ),
+          floatingActionButton:
+              count != null
+                  ? FloatingActionButton(
                     onPressed: () {
                       widget.bloc.increment();
                     },
                     tooltip: 'Increment',
                     child: const Icon(Icons.add),
                   )
-                : null,
-          );
-        });
+                  : null,
+        );
+      },
+    );
   }
 }
