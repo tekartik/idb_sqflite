@@ -22,12 +22,13 @@ const _sqlCount = 'COUNT(*) AS $_sqlCountColumnName';
 class SqfliteSelectQuery extends SqfliteQuery {
   /// Select query
   SqfliteSelectQuery(
-      this.columns,
-      this._sqlTableName,
-      this.keyColumns, //
-      this.keyOrKeyRange,
-      this._direction,
-      {this.limit});
+    this.columns,
+    this._sqlTableName,
+    this.keyColumns, //
+    this.keyOrKeyRange,
+    this._direction, {
+    this.limit,
+  });
 
   /// Columns
   List<String> columns;
@@ -74,12 +75,12 @@ class SqfliteSelectQuery extends SqfliteQuery {
     if (keyOrKeyRange is KeyRange) {
       var keyRange = keyOrKeyRange as KeyRange;
 
-      var lowers = valueAsList(keyRange.lower)
-          ?.map((key) => encodeKey(key as Object))
-          .toList(growable: false);
-      var uppers = valueAsList(keyRange.upper)
-          ?.map((key) => encodeKey(key as Object))
-          .toList(growable: false);
+      var lowers = valueAsList(
+        keyRange.lower,
+      )?.map((key) => encodeKey(key as Object)).toList(growable: false);
+      var uppers = valueAsList(
+        keyRange.upper,
+      )?.map((key) => encodeKey(key as Object)).toList(growable: false);
       assert(lowers == null || lowers.length == keyColumns.length);
       assert(uppers == null || uppers.length == keyColumns.length);
 
@@ -163,7 +164,8 @@ class SqfliteSelectQuery extends SqfliteQuery {
       if (keyColumns.isNotEmpty &&
           !keyColumns.first.startsWith(primaryKeyColumnName)) {
         sb.write(
-            '${keyColumns.map((column) => '$column NOT NULL').join(' AND ')}');
+          '${keyColumns.map((column) => '$column NOT NULL').join(' AND ')}',
+        );
       }
     }
 
@@ -177,16 +179,19 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
   /// Execute the query
   Future<List<Map<String, Object?>>> execute(
-      IdbTransactionSqflite? transaction) {
+    IdbTransactionSqflite? transaction,
+  ) {
     buildParameters();
 
     //var sqlArgs = [encodeKey(key)];
-    return transaction!.query(_sqlTableName,
-        columns: columns,
-        where: sqlWhere,
-        whereArgs: sqlWhereArgs,
-        orderBy: _orderBy,
-        limit: limit);
+    return transaction!.query(
+      _sqlTableName,
+      columns: columns,
+      where: sqlWhere,
+      whereArgs: sqlWhereArgs,
+      orderBy: _orderBy,
+      limit: limit,
+    );
   }
 }
 
@@ -194,14 +199,11 @@ class SqfliteSelectQuery extends SqfliteQuery {
 class SqfliteCountQuery extends SqfliteSelectQuery {
   /// Count query
   SqfliteCountQuery(
-      String sqlTableName, List<String> keyColumns, Object? keyOrKeyRange) //
-      : super(
-          [_sqlCount],
-          sqlTableName,
-          keyColumns,
-          keyOrKeyRange,
-          null,
-        );
+    String sqlTableName,
+    List<String> keyColumns,
+    Object? keyOrKeyRange,
+  ) //
+  : super([_sqlCount], sqlTableName, keyColumns, keyOrKeyRange, null);
 
   /// Count
   Future<int> count(IdbTransactionSqflite? transaction) async {

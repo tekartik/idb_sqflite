@@ -48,9 +48,12 @@ class IdbStoreRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
 /// Snapshot for sqflite
 class IdbIndexRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
   /// Create a snapshot from a row
-  IdbIndexRecordSnapshotSqflite(IdbObjectStoreSqflite store, this.key,
-      this._primaryKey, Map<String, Object?> row)
-      : super(store, row);
+  IdbIndexRecordSnapshotSqflite(
+    IdbObjectStoreSqflite store,
+    this.key,
+    this._primaryKey,
+    Map<String, Object?> row,
+  ) : super(store, row);
   Object? _primaryKey;
 
   @override
@@ -114,10 +117,11 @@ abstract mixin class _IdbCommonCursorSqfliteMixin<T extends Cursor> {
           if (_ctlr._rows[i].primaryKey == primaryKey) {
             // We know it is an index cursor
             _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
-                store,
-                _ctlr._rows[i].key,
-                primaryKey,
-                <String, Object?>{valueColumnName: encodeValue(value)});
+              store,
+              _ctlr._rows[i].key,
+              primaryKey,
+              <String, Object?>{valueColumnName: encodeValue(value)},
+            );
             i++;
           }
           i++;
@@ -149,8 +153,10 @@ abstract mixin class _IdbCommonCursorSqfliteMixin<T extends Cursor> {
 
 class _IdbCursorSqflite extends _IdbCommonCursorSqfliteBase<Cursor>
     implements Cursor {
-  _IdbCursorSqflite(_IdbKeyCursorBaseControllerSqflite ctlr,
-      IdbRecordSnapshotSqflite snapshot) {
+  _IdbCursorSqflite(
+    _IdbKeyCursorBaseControllerSqflite ctlr,
+    IdbRecordSnapshotSqflite snapshot,
+  ) {
     this.snapshot = snapshot;
     _ctlr = ctlr;
     index = ctlr.currentIndex!;
@@ -161,8 +167,10 @@ class _IdbCursorSqflite extends _IdbCommonCursorSqfliteBase<Cursor>
 class _IdbCursorWithValueSqflite
     extends _IdbCommonCursorSqfliteBase<CursorWithValue>
     implements CursorWithValue {
-  _IdbCursorWithValueSqflite(_IdbCursorWithValueBaseControllerSqflite ctlr,
-      IdbRecordSnapshotSqflite snapshot) {
+  _IdbCursorWithValueSqflite(
+    _IdbCursorWithValueBaseControllerSqflite ctlr,
+    IdbRecordSnapshotSqflite snapshot,
+  ) {
     this.snapshot = snapshot;
     _ctlr = ctlr;
     index = ctlr.currentIndex!;
@@ -179,7 +187,8 @@ class _IdbCursorWithValueSqflite
 void checkOpenCursorArguments(dynamic key, KeyRange? range) {
   if (key is KeyRange) {
     throw ArgumentError(
-        'Invalid keyRange $key as key argument, use the range argument');
+      'Invalid keyRange $key as key argument, use the range argument',
+    );
   }
 }
 
@@ -284,8 +293,11 @@ class IdbCursorWithValueControllerSqflite
         IdbStoreCursorCommonControllerSqflite {
   /// Cursor controller
   IdbCursorWithValueControllerSqflite(
-      this.store, String direction, bool autoAdvance) //
-      : super(direction, autoAdvance);
+    this.store,
+    String direction,
+    bool autoAdvance,
+  ) //
+  : super(direction, autoAdvance);
   @override
   IdbObjectStoreSqflite store;
 
@@ -351,8 +363,9 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
 
 /// Cursor controller
 mixin IdbStoreCursorCommonControllerSqflite
-// ignore: library_private_types_in_public_api
-    on _IdbCursorCommonControllerSqflite {
+    on
+        // ignore: library_private_types_in_public_api
+        _IdbCursorCommonControllerSqflite {
   @override
   String get sqlTableName => store.sqlTableName;
 
@@ -387,15 +400,19 @@ mixin _IdbIndexCursorCommonControllerSqflite
   @override
   set rows(List<Map<String, Object?>> rows) {
     currentIndex = -1;
-    _rows = rows
-        .map((row) => IdbIndexRecordSnapshotSqflite(
-            store,
-            index.isCompositeKey
-                ? _keyValue(row, keyColumnNames)
-                : _keyValue(row, keyColumnName),
-            null,
-            row))
-        .toList();
+    _rows =
+        rows
+            .map(
+              (row) => IdbIndexRecordSnapshotSqflite(
+                store,
+                index.isCompositeKey
+                    ? _keyValue(row, keyColumnNames)
+                    : _keyValue(row, keyColumnName),
+                null,
+                row,
+              ),
+            )
+            .toList();
     _autoNext();
   }
 }
@@ -408,8 +425,11 @@ class IdbIndexKeyCursorControllerSqflite
         _IdbIndexCursorCommonControllerSqflite {
   /// Cursor controller
   IdbIndexKeyCursorControllerSqflite(
-      IdbIndexSqflite index, String direction, bool autoAdvance) //
-      : super(direction, autoAdvance) {
+    IdbIndexSqflite index,
+    String direction,
+    bool autoAdvance,
+  ) //
+  : super(direction, autoAdvance) {
     this.index = index;
   }
 
@@ -425,8 +445,11 @@ class IdbKeyCursorControllerSqflite extends _IdbKeyCursorBaseControllerSqflite
         IdbStoreCursorCommonControllerSqflite {
   /// Cursor controller
   IdbKeyCursorControllerSqflite(
-      this.store, String direction, bool autoAdvance) //
-      : super(direction, autoAdvance);
+    this.store,
+    String direction,
+    bool autoAdvance,
+  ) //
+  : super(direction, autoAdvance);
   @override
   IdbObjectStoreSqflite store;
 
@@ -443,12 +466,18 @@ class IdbIndexCursorWithValueControllerSqflite
         _IdbIndexCursorCommonControllerSqflite {
   /// Cursor controller
   IdbIndexCursorWithValueControllerSqflite(
-      IdbIndexSqflite index, String direction, bool autoAdvance) //
-      : super(direction, autoAdvance) {
+    IdbIndexSqflite index,
+    String direction,
+    bool autoAdvance,
+  ) //
+  : super(direction, autoAdvance) {
     this.index = index;
   }
 
   @override
-  List<String> get columns =>
-      [...keyColumnNames, ...primaryKeyColumnNames, valueColumnName];
+  List<String> get columns => [
+    ...keyColumnNames,
+    ...primaryKeyColumnNames,
+    valueColumnName,
+  ];
 }

@@ -14,13 +14,16 @@ Future main() async {
   group('sdb_sqflite_ffi', () {
     test('inMemory', () async {
       var testStore = SdbStoreRef<int, SdbModel>('test');
-      var db = await factory.openDatabase(inMemoryDatabasePath, version: 1,
-          onVersionChange: (event) {
-        var oldVersion = event.oldVersion;
-        if (oldVersion < 1) {
-          event.db.createStore(testStore);
-        }
-      });
+      var db = await factory.openDatabase(
+        inMemoryDatabasePath,
+        version: 1,
+        onVersionChange: (event) {
+          var oldVersion = event.oldVersion;
+          if (oldVersion < 1) {
+            event.db.createStore(testStore);
+          }
+        },
+      );
 
       var key = await testStore.add(db, {'test': 1});
       expect((await testStore.record(key).get(db))!.value, {'test': 1});

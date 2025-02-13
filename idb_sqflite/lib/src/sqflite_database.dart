@@ -22,8 +22,11 @@ String sanitizeDbName(String name) => name;
 class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
   /// Create a change event
   IdbVersionChangeEventSqflite(
-      IdbDatabaseSqflite database, int? oldVersion, this.newVersion) //
-      : oldVersion = oldVersion ?? 0 {
+    IdbDatabaseSqflite database,
+    int? oldVersion,
+    this.newVersion,
+  ) //
+  : oldVersion = oldVersion ?? 0 {
     // handle = too to catch programatical errors
     if (this.oldVersion >= newVersion) {
       throw StateError('cannot downgrade from $oldVersion to $newVersion');
@@ -77,13 +80,15 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
   /// apply schema changes
   Future applySchemaChanges(IdbOpenTransactionSqflite tx) async {
-    final txnMeta = tx.meta
-        as IdbVersionChangeTransactionMeta; // .versionChangeTransaction;
+    final txnMeta =
+        tx.meta
+            as IdbVersionChangeTransactionMeta; // .versionChangeTransaction;
 
     Future createIndecies() async {
       for (var storeName in txnMeta.createdIndexes.keys) {
-        var store = versionChangeTransaction!.objectStore(storeName)
-            as IdbObjectStoreSqflite;
+        var store =
+            versionChangeTransaction!.objectStore(storeName)
+                as IdbObjectStoreSqflite;
         var indexMetas = txnMeta.createdIndexes[storeName]!;
         for (var indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
@@ -93,11 +98,13 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
           if (!txnMeta.createdStores
               .map((store) => store.name)
               .contains(storeName)) {
-            var rows = await store.transaction.query(store.sqlTableName,
-                columns: [
-                  '$sqliteRowId as $primaryIdColumnName',
-                  valueColumnName
-                ]);
+            var rows = await store.transaction.query(
+              store.sqlTableName,
+              columns: [
+                '$sqliteRowId as $primaryIdColumnName',
+                valueColumnName,
+              ],
+            );
             if (rows.isNotEmpty) {
               await versionChangeTransaction!.batch((batch) {
                 for (var row in rows) {
@@ -105,7 +112,10 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                   if (value is Map) {
                     var keyValue = mapValueAtKeyPath(value, index.keyPath);
                     index.insertKeyBatch(
-                        batch, (row[primaryIdColumnName]) as int?, keyValue);
+                      batch,
+                      (row[primaryIdColumnName]) as int?,
+                      keyValue,
+                    );
                   }
                 }
               });
@@ -117,8 +127,9 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     Future removeDeletedIndecies() async {
       for (var storeName in txnMeta.deletedIndexes.keys) {
-        var store = versionChangeTransaction!.objectStore(storeName)
-            as IdbObjectStoreSqflite;
+        var store =
+            versionChangeTransaction!.objectStore(storeName)
+                as IdbObjectStoreSqflite;
         var indexMetas = txnMeta.deletedIndexes[storeName]!;
         for (var indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
@@ -174,8 +185,12 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     txnMeta.updatedStores.clear();
   }
 
-  Future _upgrade(IdbTransactionSqflite tx, int? oldVersion, int newVersion,
-      FutureOr<void> Function(VersionChangeEvent event) onUpgradeNeeded) async {
+  Future _upgrade(
+    IdbTransactionSqflite tx,
+    int? oldVersion,
+    int newVersion,
+    FutureOr<void> Function(VersionChangeEvent event) onUpgradeNeeded,
+  ) async {
     versionChangeTransaction = tx;
     try {
       var event = IdbVersionChangeEventSqflite(this, oldVersion, newVersion);
@@ -202,54 +217,62 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
         await db.execute('DROP TABLE IF EXISTS $versionTable'); //
 
         await db.execute(
-            'CREATE TABLE $versionTable ($versionField INT, $signatureField TEXT)');
+          'CREATE TABLE $versionTable ($versionField INT, $signatureField TEXT)',
+        );
         await db.insert(versionTable, <String, Object?>{
           versionField: 0,
-          signatureField: internalSignature
+          signatureField: internalSignature,
         });
         await db.execute('DROP TABLE IF EXISTS $storesTable');
-        await db.execute('CREATE TABLE $storesTable ' //
-            '($nameField TEXT UNIQUE, $metaField TEXT)');
+        await db.execute(
+          'CREATE TABLE $storesTable ' //
+          '($nameField TEXT UNIQUE, $metaField TEXT)',
+        );
         oldVersion = 0;
       }
 
       var path = sanitizeDbName(name);
-      return sqfliteDatabaseFactory.openDatabase(path,
-          options: sqflite.OpenDatabaseOptions(
-              version: internalVersion,
-              onConfigure: (db) async {
-                await db.execute('PRAGMA foreign_keys = ON');
-              },
-              onCreate: (db, _) async {
-                await initDatabase(db);
-              },
-              onDowngrade: sqflite.onDatabaseDowngradeDelete,
-              onOpen: (db) async {
-                if (oldVersion == null) {
-                  try {
-                    var list = await db.query(versionTable,
-                        columns: [versionField, signatureField]);
-                    if (list.length != 1) {
-                      throw '1 record expected in $versionTable';
-                    }
-                    var row = list.first;
-                    var signature = row[signatureField]?.toString();
-                    if (signature != internalSignature) {
-                      throw 'unexpected signature $signature';
-                    }
-                    oldVersion = row[versionField] as int?;
-                    if (oldVersion == null) {
-                      throw 'null version';
-                    }
-                  } catch (e) {
-                    if (isDebug) {
-                      // ignore: avoid_print
-                      print(e);
-                    }
-                    await initDatabase(db);
-                  }
+      return sqfliteDatabaseFactory.openDatabase(
+        path,
+        options: sqflite.OpenDatabaseOptions(
+          version: internalVersion,
+          onConfigure: (db) async {
+            await db.execute('PRAGMA foreign_keys = ON');
+          },
+          onCreate: (db, _) async {
+            await initDatabase(db);
+          },
+          onDowngrade: sqflite.onDatabaseDowngradeDelete,
+          onOpen: (db) async {
+            if (oldVersion == null) {
+              try {
+                var list = await db.query(
+                  versionTable,
+                  columns: [versionField, signatureField],
+                );
+                if (list.length != 1) {
+                  throw '1 record expected in $versionTable';
                 }
-              }));
+                var row = list.first;
+                var signature = row[signatureField]?.toString();
+                if (signature != internalSignature) {
+                  throw 'unexpected signature $signature';
+                }
+                oldVersion = row[versionField] as int?;
+                if (oldVersion == null) {
+                  throw 'null version';
+                }
+              } catch (e) {
+                if (isDebug) {
+                  // ignore: avoid_print
+                  print(e);
+                }
+                await initDatabase(db);
+              }
+            }
+          },
+        ),
+      );
     }
 
     // Set right away needed from transaction
@@ -281,9 +304,10 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
           Future updateVersion() async {
             // return initBlock(() {
-            await transaction
-                    .update(versionTable, {versionField: newVersion}) //
-                ;
+            await transaction.update(versionTable, {
+              versionField: newVersion,
+            }) //
+            ;
           }
 
           //return initBlock(() {
@@ -294,7 +318,11 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
               try {
                 transaction.meta = meta.versionChangeTransaction;
                 await _upgrade(
-                    transaction, oldVersion, newVersion!, onUpgradeNeeded);
+                  transaction,
+                  oldVersion,
+                  newVersion!,
+                  onUpgradeNeeded,
+                );
               } finally {
                 transaction.meta = oldMeta;
               }
@@ -326,8 +354,11 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   }
 
   @override
-  ObjectStore createObjectStore(String name,
-      {Object? keyPath, bool? autoIncrement = false}) {
+  ObjectStore createObjectStore(
+    String name, {
+    Object? keyPath,
+    bool? autoIncrement = false,
+  }) {
     var storeMeta = IdbObjectStoreMeta(name, keyPath, autoIncrement);
     meta.createObjectStore(storeMeta);
 
@@ -337,8 +368,10 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
   /// Load stores meta data
   Future _loadStores(IdbTransactionSqflite transaction) async {
-    var list =
-        await transaction.query(storesTable, columns: [nameField, metaField]);
+    var list = await transaction.query(
+      storesTable,
+      columns: [nameField, metaField],
+    );
     list.forEach((row) {
       var map =
           (jsonDecode(row['meta'] as String) as Map).cast<String, Object?>();

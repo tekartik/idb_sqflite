@@ -33,10 +33,12 @@ class IdbFactorySqflite extends IdbFactoryBase {
   }
 
   @override
-  Future<Database> open(String dbName,
-      {int? version,
-      OnUpgradeNeededFunction? onUpgradeNeeded,
-      OnBlockedFunction? onBlocked}) async {
+  Future<Database> open(
+    String dbName, {
+    int? version,
+    OnUpgradeNeededFunction? onUpgradeNeeded,
+    OnBlockedFunction? onBlocked,
+  }) async {
     checkOpenArguments(version: version, onUpgradeNeeded: onUpgradeNeeded);
 
     var added = false;
@@ -54,8 +56,10 @@ class IdbFactorySqflite extends IdbFactoryBase {
   }
 
   @override
-  Future<IdbFactory> deleteDatabase(String dbName,
-      {OnBlockedFunction? onBlocked}) async {
+  Future<IdbFactory> deleteDatabase(
+    String dbName, {
+    OnBlockedFunction? onBlocked,
+  }) async {
     var path = sanitizeDbName(dbName);
     await sqfliteDatabaseFactory.deleteDatabase(path);
     await globalStore.deleteDatabaseName(dbName);

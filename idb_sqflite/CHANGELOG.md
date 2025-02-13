@@ -1,3 +1,7 @@
+## 1.3.4
+
+* Requires dart 3.7
+
 ## 1.3.3+7
 
 * sdb (Simple db) support.
