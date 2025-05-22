@@ -105,46 +105,41 @@ abstract mixin class _IdbCommonCursorSqfliteMixin<T extends Cursor> {
   }
 
   Future<void> update(Object value) async {
-    return _ctlr.lock.synchronized(() async {
-      value = toSqfliteValue(value);
-      var store = _ctlr.store;
-      await store.putImpl(value, primaryKey);
-      // Index only handle
-      if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
-        // Also update all records in the current list...
-        var i = index + 1;
-        while (i < _ctlr._rows.length) {
-          if (_ctlr._rows[i].primaryKey == primaryKey) {
-            // We know it is an index cursor
-            _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
-              store,
-              _ctlr._rows[i].key,
-              primaryKey,
-              <String, Object?>{valueColumnName: encodeValue(value)},
-            );
-            i++;
-          }
+    value = toSqfliteValue(value);
+    var store = _ctlr.store;
+    // Index only handle
+    if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
+      // Also update all records in the current list...
+      var i = index + 1;
+      while (i < _ctlr._rows.length) {
+        if (_ctlr._rows[i].primaryKey == primaryKey) {
+          // We know it is an index cursor
+          _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
+            store,
+            _ctlr._rows[i].key,
+            primaryKey,
+            <String, Object?>{valueColumnName: encodeValue(value)},
+          );
           i++;
         }
+        i++;
       }
-    });
+    }
+    await store.putImpl(value, primaryKey);
   }
 
   Future delete() async {
-    return _ctlr.lock.synchronized(() async {
-      await _ctlr.store.deleteImpl(primaryKey);
-      // Index only handle
-      if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
-        var i = index + 1;
-        while (i < _ctlr._rows.length) {
-          if (_ctlr._rows[i].primaryKey == primaryKey) {
-            _ctlr._rows.removeAt(i);
-          } else {
-            i++;
-          }
+    if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
+      var i = index + 1;
+      while (i < _ctlr._rows.length) {
+        if (_ctlr._rows[i].primaryKey == primaryKey) {
+          _ctlr._rows.removeAt(i);
+        } else {
+          i++;
         }
       }
-    });
+    }
+    await _ctlr.store.deleteImpl(primaryKey);
   }
 
   @override
