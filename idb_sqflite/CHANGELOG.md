@@ -1,3 +1,7 @@
+## 1.3.5
+
+* Fix `Sdb.delete` with boundaries, limit, offset and descending.
+
 ## 1.3.4
 
 * Requires dart 3.7
