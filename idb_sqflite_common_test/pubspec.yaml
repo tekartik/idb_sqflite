@@ -14,7 +14,7 @@ publish_to: none
 version: 0.2.0
 
 environment:
-  sdk: ^3.7.0
+  sdk: ^3.8.0
 
 dependencies:
   idb_sqflite:
