@@ -21,21 +21,20 @@ class SqfliteGlobalStore {
   sqflite.Database? _database;
 
   /// sqflite Database
-  Future<sqflite.Database> get database async =>
-      _database ??= await () async {
-        return sqfliteDatabaseFactory.openDatabase(
-          dbName,
-          options: sqflite.OpenDatabaseOptions(
-            version: 1,
-            onCreate: (db, _) async {
-              await db.execute('DROP TABLE IF EXISTS $databaseTable');
-              await db.execute(
-                'CREATE TABLE $databaseTable (name TEXT UNIQUE NOT NULL)',
-              );
-            },
-          ),
-        );
-      }();
+  Future<sqflite.Database> get database async => _database ??= await () async {
+    return sqfliteDatabaseFactory.openDatabase(
+      dbName,
+      options: sqflite.OpenDatabaseOptions(
+        version: 1,
+        onCreate: (db, _) async {
+          await db.execute('DROP TABLE IF EXISTS $databaseTable');
+          await db.execute(
+            'CREATE TABLE $databaseTable (name TEXT UNIQUE NOT NULL)',
+          );
+        },
+      ),
+    );
+  }();
 
   /// Get database names
   Future<List<String>> getDatabaseNames() async {

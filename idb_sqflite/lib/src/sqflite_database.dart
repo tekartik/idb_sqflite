@@ -373,8 +373,8 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       columns: [nameField, metaField],
     );
     list.forEach((row) {
-      var map =
-          (jsonDecode(row['meta'] as String) as Map).cast<String, Object?>();
+      var map = (jsonDecode(row['meta'] as String) as Map)
+          .cast<String, Object?>();
       var storeMeta = IdbObjectStoreMeta.fromMap(map);
       meta.putObjectStore(storeMeta);
     });

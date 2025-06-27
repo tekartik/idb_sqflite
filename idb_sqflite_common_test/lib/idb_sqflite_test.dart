@@ -176,8 +176,10 @@ void defineTests(IdbFactory? factory) {
           }
 
           // Call insert in parallel
-          var futures =
-              List.generate(txnCount, (i) => insert(insertCount)).toList();
+          var futures = List.generate(
+            txnCount,
+            (i) => insert(insertCount),
+          ).toList();
           await Future.wait(futures);
           var txn = db.transaction(testStoreName, idbModeReadOnly);
           var store = txn.objectStore(testStoreName);

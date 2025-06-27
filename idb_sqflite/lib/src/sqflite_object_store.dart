@@ -281,8 +281,9 @@ class IdbObjectStoreSqflite
     int? primaryId;
     for (var index in _indecies) {
       primaryId ??= await getPrimaryId(key);
-      var keyValue =
-          value is Map ? mapValueAtKeyPath(value, index.keyPath) : null;
+      var keyValue = value is Map
+          ? mapValueAtKeyPath(value, index.keyPath)
+          : null;
       await index.updateKey(primaryId!, keyValue);
     }
 

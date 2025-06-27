@@ -53,19 +53,17 @@ mixin IdbSqfliteKeyPathMixin implements IdbSqfliteKeyPath {
   String get primaryKeyColumn => primaryKeyColumnName;
 
   /// ['pk'] ok ['pk1', 'pk2'...]
-  late final primaryKeyColumnNames =
-      isPrimaryCompositeKey
-          ? List.generate(
-            primaryCompositeKeyCount,
-            (i) => primaryKeyIndexToKeyName(i),
-          )
-          : [primaryKeyColumnName];
+  late final primaryKeyColumnNames = isPrimaryCompositeKey
+      ? List.generate(
+          primaryCompositeKeyCount,
+          (i) => primaryKeyIndexToKeyName(i),
+        )
+      : [primaryKeyColumnName];
 
   /// ['k'] ok ['k1', 'k2'...]
-  late final keyColumnNames =
-      isCompositeKey
-          ? List.generate(compositeKeyCount, (i) => keyIndexToKeyName(i))
-          : [keyColumnName];
+  late final keyColumnNames = isCompositeKey
+      ? List.generate(compositeKeyCount, (i) => keyIndexToKeyName(i))
+      : [keyColumnName];
 
   /// Get the primate key value from a row
   Object rowGetPrimaryKeyValue(Map row) {

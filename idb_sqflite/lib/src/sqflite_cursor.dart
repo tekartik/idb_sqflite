@@ -371,8 +371,9 @@ mixin IdbStoreCursorCommonControllerSqflite
   @override
   set rows(List<Map<String, Object?>> rows) {
     currentIndex = -1;
-    _rows =
-        rows.map((row) => IdbStoreRecordSnapshotSqflite(store, row)).toList();
+    _rows = rows
+        .map((row) => IdbStoreRecordSnapshotSqflite(store, row))
+        .toList();
     _autoNext();
   }
 }
@@ -395,19 +396,18 @@ mixin _IdbIndexCursorCommonControllerSqflite
   @override
   set rows(List<Map<String, Object?>> rows) {
     currentIndex = -1;
-    _rows =
-        rows
-            .map(
-              (row) => IdbIndexRecordSnapshotSqflite(
-                store,
-                index.isCompositeKey
-                    ? _keyValue(row, keyColumnNames)
-                    : _keyValue(row, keyColumnName),
-                null,
-                row,
-              ),
-            )
-            .toList();
+    _rows = rows
+        .map(
+          (row) => IdbIndexRecordSnapshotSqflite(
+            store,
+            index.isCompositeKey
+                ? _keyValue(row, keyColumnNames)
+                : _keyValue(row, keyColumnName),
+            null,
+            row,
+          ),
+        )
+        .toList();
     _autoNext();
   }
 }
