@@ -23,7 +23,6 @@ dependencies:
   idb_test:
     git:
       url: https://github.com/tekartik/idb_shim.dart
-      ref: dart3a
       path: idb_test
     version: '>=0.3.0'
   test:
