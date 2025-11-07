@@ -24,4 +24,4 @@ const isRunningAsJavascript = identical(1, 1.0);
 
 /// Borrowed from flutter (isRunningAsJavascript is false in wasm)
 /// Work in non-flutter environment too
-const bool kIdbSqfliteIsWeb = bool.fromEnvironment('dart.library.js_util');
+const bool kIdbSqfliteIsWeb = bool.fromEnvironment('dart.library.js_interop');
