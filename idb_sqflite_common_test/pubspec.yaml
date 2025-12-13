@@ -14,11 +14,11 @@ publish_to: none
 version: 0.2.0
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.10.0
 
 dependencies:
   idb_sqflite:
-  idb_shim: '>=2.6.0+4'
+  idb_shim: '>=2.7.0'
   sqflite_common:
   idb_test:
     git:
