@@ -193,8 +193,13 @@ class IdbObjectStoreSqflite
           }
         });
 
-    return _lazyPrepare!.then((_) {
-      return computation();
+    return _lazyPrepare!.then((_) async {
+      try {
+        return await computation();
+      } catch (e) {
+        transaction.abort();
+        rethrow;
+      }
     });
   }
 
