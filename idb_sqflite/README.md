@@ -50,3 +50,42 @@ Future main() async {
 See [idb_shim](https://github.com/tekartik/idb_shim.dart) for API usage or more generally the 
 [W3C reference](https://www.w3.org/TR/IndexedDB-2/) 
 
+## SDB
+
+[SDB](https://github.com/tekartik/idb_shim.dart/blob/master/idb_shim/doc/sdb.md) is a simplified wrapper API around IndexedDB.
+
+### SDB Example
+
+```dart
+import 'package:idb_sqflite/sdb_sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+Future main() async {
+  // Initialize FFI
+  sqfliteFfiInit();
+
+  // Use the ffi factory
+  var sdbFactory = sdbFactoryFromSqflite(databaseFactoryFfi);
+
+  print('Stored in .local/tmp/out/my_records.db');
+  var dbPath = join('.local', 'tmp', 'out', 'my_records.db');
+
+  // Testing only, remove any existing database
+  await sdbFactory.deleteDatabase(dbPath);
+  var store = SdbStoreRef<int, SdbModel>('store');
+  // open the database
+  final db = await sdbFactory.openDatabase(
+    dbPath,
+    options: SdbOpenDatabaseOptions(
+      version: 1,
+      schema: SdbDatabaseSchema(stores: [store.schema(autoIncrement: true)]),
+    ),
+  );
+  // Add some data
+  var key = await store.add(db, {'some': 'data'});
+  await store.add(db, {'some': 'other data'});
+  final snapshot = await store.record(key).get(db);
+
+  print(snapshot);
+  await db.close();
+}
+```
