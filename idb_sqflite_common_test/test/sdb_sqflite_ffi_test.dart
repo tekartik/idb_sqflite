@@ -16,13 +16,15 @@ Future main() async {
       var testStore = SdbStoreRef<int, SdbModel>('test');
       var db = await factory.openDatabase(
         inMemoryDatabasePath,
-        version: 1,
-        onVersionChange: (event) {
-          var oldVersion = event.oldVersion;
-          if (oldVersion < 1) {
-            event.db.createStore(testStore);
-          }
-        },
+        options: SdbOpenDatabaseOptions(
+          version: 1,
+          onVersionChange: (event) {
+            var oldVersion = event.oldVersion;
+            if (oldVersion < 1) {
+              event.db.createStore(testStore);
+            }
+          },
+        ),
       );
 
       var key = await testStore.add(db, {'test': 1});

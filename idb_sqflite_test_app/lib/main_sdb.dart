@@ -42,11 +42,13 @@ class MyAppBloc {
 
   late final Future<SdbDatabase> database = factory.openDatabase(
     'counter.db',
-    version: 1,
-    onVersionChange: (event) {
-      var db = event.db;
-      db.createStore(store);
-    },
+    options: SdbOpenDatabaseOptions(
+      version: 1,
+      onVersionChange: (event) {
+        var db = event.db;
+        db.createStore(store);
+      },
+    ),
   );
 
   final StreamController<int?> _counterController =
