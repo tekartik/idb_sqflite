@@ -1,4 +1,4 @@
-# 1.4.0-1
+# 1.4.0
 
 * fix cursor stack overflow issue.
 
