@@ -1,3 +1,7 @@
+# 1.4.0-1
+
+* fix cursor stack overflow issue.
+
 # 1.3.6+3
 
 * require dart 3.10
