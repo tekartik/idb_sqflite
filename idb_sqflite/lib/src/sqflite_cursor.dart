@@ -208,8 +208,13 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
 
   T newCursor(int index);
 
-  // Sync must be true
-  final _ctlr = StreamController<T>(sync: true);
+  // Old recommendation was: Sync must be true
+  // however this blows up the stack
+  //
+  // 2026-04-23 try false, perfect!
+  // so: sync must be false otherwise idb_sqflite
+  // will blow up the stack when reading 1000 items
+  final _ctlr = StreamController<T>(sync: false);
 
   bool indexIsValid(int index) {
     var length = _rows.length;
