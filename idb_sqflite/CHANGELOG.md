@@ -1,4 +1,4 @@
-# 1.4.1-1
+# 1.4.1
 
 * Depends on idb_shim 2.9.1+
 
