@@ -106,7 +106,7 @@ class IdbTransactionSqflite extends IdbTransactionBase
       _txn.run((txn) => txn.delete(table, where: where, whereArgs: whereArgs));
 
   /// Batch
-  Future<List<dynamic>> batch(void Function(sqflite.Batch batch) prepare) =>
+  Future<List<Object?>> batch(void Function(sqflite.Batch batch) prepare) =>
       _txn.run((txn) {
         var batch = txn.batch();
         prepare(batch);

@@ -1,6 +1,7 @@
-# 1.4.1
+# 1.4.1+1
 
 * Depends on idb_shim 2.9.1+
+* idb: Remove invalid warning when deleting an object that does not exist
 
 # 1.4.0
 

@@ -465,20 +465,23 @@ class IdbObjectStoreSqflite
       var key = keyOrRange;
       // remove the index value
       var primaryId = await getPrimaryId(key);
-      await transaction.batch((batch) {
-        for (var index in _indecies) {
+      if (primaryId != null) {
+        // only perform if it exists
+        await transaction.batch((batch) {
+          for (var index in _indecies) {
+            batch.delete(
+              index.sqlIndexTableName,
+              where: '$primaryIdColumnName = ?',
+              whereArgs: [primaryId],
+            );
+          }
           batch.delete(
-            index.sqlIndexTableName,
-            where: '$primaryIdColumnName = ?',
+            sqlTableName,
+            where: '$sqliteRowId = ?',
             whereArgs: [primaryId],
           );
-        }
-        batch.delete(
-          sqlTableName,
-          where: '$sqliteRowId = ?',
-          whereArgs: [primaryId],
-        );
-      });
+        });
+      }
     }
   }
 
