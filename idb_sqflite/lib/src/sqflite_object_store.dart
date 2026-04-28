@@ -397,8 +397,7 @@ class IdbObjectStoreSqflite
   }
 
   /// Return the primary key
-  /// @deprecated once index is a table
-  Future<Object?> getKeyImpl(Object key, [String? keyPath]) async {
+  Future<Object?> getKeyImpl(Object key) async {
     var row = await getFirstRow(key, columns: primaryKeyColumnNames);
     if (row == null) {
       return null;
@@ -411,6 +410,14 @@ class IdbObjectStoreSqflite
     checkKeyParam(key);
     return checkStore(() {
       return getImpl(key);
+    });
+  }
+
+  @override
+  Future<Object?> getKey(Object key) {
+    checkKeyParam(key);
+    return checkStore(() {
+      return getKeyImpl(key);
     });
   }
 

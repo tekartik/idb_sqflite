@@ -17,8 +17,8 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  idb_sqflite: '>=1.3.6'
-  idb_shim: '>=2.8.0-2 <4.0.0'
+  idb_sqflite: '>=1.4.1-1'
+  idb_shim: '>=2.9.1-1 <4.0.0'
   sqflite_common:
   idb_test:
     git:
