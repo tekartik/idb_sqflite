@@ -11,7 +11,7 @@ environment:
 dev_dependencies:
   lints: '>=1.0.1'
   process_run: '>=0.10.1'
-  dev_build:
+  dev_build: ">=1.1.7"
   flutter_lints:
   path:
   pub_semver:
