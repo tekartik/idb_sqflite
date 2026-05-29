@@ -251,16 +251,16 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                   columns: [versionField, signatureField],
                 );
                 if (list.length != 1) {
-                  throw '1 record expected in $versionTable';
+                  throw StateError('1 record expected in $versionTable');
                 }
                 var row = list.first;
                 var signature = row[signatureField]?.toString();
                 if (signature != internalSignature) {
-                  throw 'unexpected signature $signature';
+                  throw StateError('unexpected signature $signature');
                 }
                 oldVersion = row[versionField] as int?;
                 if (oldVersion == null) {
-                  throw 'null version';
+                  throw StateError('null version');
                 }
               } catch (e) {
                 if (isDebug) {

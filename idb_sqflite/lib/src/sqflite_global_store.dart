@@ -2,10 +2,10 @@ import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 import 'package:sqflite_common/utils/utils.dart';
 
 /// Global store
-final String globalStoreDbName = 'com.tekartik.idb.global_store';
+const String globalStoreDbName = 'com.tekartik.idb.global_store';
 
 /// Global store table
-final String databaseTable = 'database';
+const String databaseTable = 'database';
 
 /// Global store
 class SqfliteGlobalStore {

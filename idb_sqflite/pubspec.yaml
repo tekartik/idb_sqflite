@@ -6,7 +6,7 @@ topics:
   - database
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.12.0
 
 dependencies:
   idb_shim: '>=2.9.1 <4.0.0'

@@ -6,7 +6,7 @@ class IdbErrorSqflite extends DatabaseError {
   IdbErrorSqflite(this.errorCode, String message) : super(message);
 
   /// Error code for missing key
-  static final int missingKeyErrorCode = 3;
+  static const int missingKeyErrorCode = 3;
 
   /// Error code
   int errorCode;
