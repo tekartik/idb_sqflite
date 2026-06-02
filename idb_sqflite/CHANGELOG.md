@@ -1,3 +1,7 @@
+# 1.4.2
+
+* require dart 3.12
+
 # 1.4.1+1
 
 * Depends on idb_shim 2.9.1+
