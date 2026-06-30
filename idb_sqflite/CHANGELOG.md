@@ -1,3 +1,7 @@
+# 1.4.3-1
+
+* Override `getDatabaseFullPath()`
+
 # 1.4.2
 
 * require dart 3.12

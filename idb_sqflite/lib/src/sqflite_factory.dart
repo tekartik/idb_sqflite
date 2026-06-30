@@ -4,6 +4,7 @@ import 'package:idb_shim/src/common/common_factory.dart';
 import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_global_store.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
 /// idb_sqflite factory name
@@ -80,4 +81,16 @@ class IdbFactorySqflite extends IdbFactoryBase {
 
   @override
   bool get supportsDoubleKey => false;
+
+  @override
+  Future<String> getDatabaseFullPath(String name) async {
+    if (name == sqflite.inMemoryDatabasePath) {
+      return name;
+    }
+    if (p.isAbsolute(name)) {
+      return name;
+    }
+    var databasesPath = await sqfliteDatabaseFactory.getDatabasesPath();
+    return p.join(databasesPath, name);
+  }
 }
