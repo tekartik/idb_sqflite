@@ -1,4 +1,4 @@
-# 1.4.3-1
+# 1.4.3
 
 * Override `getDatabaseFullPath()`
 
