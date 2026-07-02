@@ -31,7 +31,7 @@ class IdbDatabaseErrorSqflite extends DatabaseError {
   }
 }
 
-bool _handleError(dynamic e) {
+bool _handleError(Object? e) {
   if (e is DatabaseError) {
     return false;
   } else if (e is DatabaseException) {

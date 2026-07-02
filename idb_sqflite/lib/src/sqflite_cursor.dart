@@ -63,7 +63,7 @@ class IdbIndexRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
   final Object key;
 }
 
-Object _keyValue(Map<String, Object?> map, dynamic columnOrColumns) {
+Object _keyValue(Map<String, Object?> map, Object? columnOrColumns) {
   if (columnOrColumns is Iterable) {
     var list = <dynamic>[];
     for (var column in columnOrColumns) {
@@ -179,7 +179,7 @@ class _IdbCursorWithValueSqflite
 }
 
 /// Check open cursor arguments
-void checkOpenCursorArguments(dynamic key, KeyRange? range) {
+void checkOpenCursorArguments(Object? key, KeyRange? range) {
   if (key is KeyRange) {
     throw ArgumentError(
       'Invalid keyRange $key as key argument, use the range argument',

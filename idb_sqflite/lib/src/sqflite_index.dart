@@ -225,14 +225,14 @@ class IdbIndexSqflite
   }
 
   /// Insert a key
-  Future insertKey(int primaryId, dynamic keyValue) async {
+  Future insertKey(int primaryId, Object? keyValue) async {
     await transaction!.batch((batch) {
       insertKeyBatch(batch, primaryId, keyValue);
     });
   }
 
   /// Insert a key in a batch
-  void insertKeyBatch(sqflite.Batch batch, int? primaryId, dynamic keyValue) {
+  void insertKeyBatch(sqflite.Batch batch, int? primaryId, Object? keyValue) {
     if (keyValue != null) {
       if (multiEntry) {
         var keys = valueAsSet(keyValue);
@@ -257,7 +257,7 @@ class IdbIndexSqflite
             map[keyColumnName] = _encodeKeyOrNull((keyValue as List)[i]);
           }
         } else {
-          map[keyColumnName] = encodeKey(keyValue as Object);
+          map[keyColumnName] = encodeKey(keyValue);
         }
         batch.insert(sqlIndexTableName, map);
       }
@@ -272,7 +272,7 @@ class IdbIndexSqflite
   }
 
   /// Update a key
-  Future updateKey(int primaryId, dynamic keyValue) async {
+  Future updateKey(int primaryId, Object? keyValue) async {
     await transaction!.batch((batch) {
       batch.delete(
         sqlIndexTableName,
@@ -295,7 +295,7 @@ class IdbIndexSqflite
   }
 
   @override
-  Future<List<Object>> getAll([dynamic query, int? count]) {
+  Future<List<Object>> getAll([Object? query, int? count]) {
     return _checkIndex(() {
       var tableName = sqlIndexViewName;
       var columns = [valueColumnName];
