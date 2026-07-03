@@ -33,6 +33,10 @@ dev_dependencies:
   process_run: '>=0.12.0-0'
   dev_test: '>=1.0.0'
   flutter_lints: '>=2.0.2'
+  idb_test:
+    git:
+      url: https://github.com/tekartik/idb_shim.dart
+      path: idb_test
 
 dependency_overrides:
   idb_sqflite:
