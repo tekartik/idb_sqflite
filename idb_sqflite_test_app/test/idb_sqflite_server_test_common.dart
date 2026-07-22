@@ -9,7 +9,7 @@ class TestContextSqfliteServer extends TestContext {
   final sqflite.DatabaseFactory sqfliteDatabaseFactory;
 
   TestContextSqfliteServer(this.sqfliteDatabaseFactory) {
-    factory = IdbFactorySqflite(sqfliteDatabaseFactory);
+    factory = IdbFactorySqfliteImpl(sqfliteDatabaseFactory);
   }
 
   @override

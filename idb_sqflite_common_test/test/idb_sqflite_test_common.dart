@@ -6,7 +6,7 @@ export 'package:sqflite_common/sqlite_api.dart' hide Database;
 
 class TestContextSqfliteFfi extends TestContext {
   TestContextSqfliteFfi() {
-    factory = IdbFactorySqflite(databaseFactoryFfi);
+    factory = IdbFactorySqfliteImpl(databaseFactoryFfi);
   }
 
   @override

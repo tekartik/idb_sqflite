@@ -6,7 +6,7 @@ import 'package:sqflite_common/sqflite.dart' as sqflite;
 
 /// Build the indexed db factory from a sqflite factory
 IdbFactory getIdbFactorySqflite(sqflite.DatabaseFactory factory) =>
-    IdbFactorySqflite(factory);
+    IdbFactorySqfliteImpl(factory);
 
 /// The idb factory using the default sqflite factory (initialized either using
 /// the plugin or manually)

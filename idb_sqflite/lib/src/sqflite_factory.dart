@@ -1,7 +1,6 @@
-// ignore_for_file: implementation_imports
 import 'package:idb_shim/idb.dart';
-import 'package:idb_shim/src/common/common_factory.dart';
-import 'package:idb_shim/src/common/common_value.dart';
+// ignore: implementation_imports
+import 'package:idb_shim/src/common/mixin.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
@@ -9,12 +8,20 @@ import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 /// idb_sqflite factory name
 const String idbFactoryNameSqflite = 'sqflite';
 
+/// Idb factory on top of sqflite (ffi, common, plugin, web...)
+abstract class IdbFactorySqflite extends IdbFactory {
+  /// sqflite database factory
+  sqflite.DatabaseFactory get sqfliteDatabaseFactory;
+}
+
 /// idb_sqflite factory class
-class IdbFactorySqflite extends IdbFactoryBase {
+class IdbFactorySqfliteImpl extends IdbFactoryBase
+    implements IdbFactorySqflite {
   /// idb_sqflite factory
-  IdbFactorySqflite(this.sqfliteDatabaseFactory);
+  IdbFactorySqfliteImpl(this.sqfliteDatabaseFactory);
 
   /// sqflite database factory
+  @override
   final sqflite.DatabaseFactory sqfliteDatabaseFactory;
   @override
   bool get persistent => true;
@@ -79,5 +86,11 @@ class IdbFactorySqflite extends IdbFactoryBase {
     }
     var databasesPath = await sqfliteDatabaseFactory.getDatabasesPath();
     return p.join(databasesPath, name);
+  }
+
+  @override
+  bool isImmutableDatabaseName(String name) {
+    /// :memory:
+    return name == sqflite.inMemoryDatabasePath;
   }
 }

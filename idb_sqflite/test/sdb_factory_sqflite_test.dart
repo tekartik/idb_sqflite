@@ -2,6 +2,7 @@
 library;
 
 import 'package:idb_sqflite/sdb_sqflite.dart';
+import 'package:idb_sqflite/src/idb_import.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:test/test.dart';
@@ -12,8 +13,36 @@ void main() {
   databaseFactory = databaseFactoryFfi;
   var factory = sdbFactorySqflite;
 
+  group('sdb_sandbox_sqflite_ffi', () {
+    var factory =
+        sdbFactorySqflite.sandbox(path: 'sandbox') as SdbFactorySandbox;
+
+    test('delegatePath', () async {
+      expect(
+        factory.delegatePath('test.db'),
+        endsWith(join('sandbox', 'test.db')),
+      );
+      expect(factory.delegatePath(inMemoryDatabasePath), inMemoryDatabasePath);
+    });
+    test('inMemoryDatabasesPath', () async {
+      expect(
+        await factory.getDatabaseFullPath(inMemoryDatabasePath),
+        inMemoryDatabasePath,
+      );
+    });
+    test('full path', () async {
+      expect(
+        await factory.getDatabaseFullPath('test.db'),
+        endsWith(join('sandbox', 'test.db')),
+      );
+    });
+  });
   group('sdb_factory_io', () {
     test('getDatabaseFullPath()', () async {
+      expect(
+        await factory.getDatabaseFullPath(inMemoryDatabasePath),
+        inMemoryDatabasePath,
+      );
       var databasesPath = await databaseFactory.getDatabasesPath();
       expect(
         canonicalize(await factory.getDatabaseFullPath('test.db')),
@@ -44,6 +73,7 @@ void main() {
       }
     });
   });
+
   test('sandbox database path', () async {
     var here = normalize(
       absolute(join('.dart_tool', 'idb_sqflite_test', 'db_path')),
