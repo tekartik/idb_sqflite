@@ -1,7 +1,7 @@
-# 1.4.4-1
+# 1.4.4-2
 
 * Support sandbox
-* Remove support for getDatabaseNames
+* Remove support for `getDatabaseNames()`
 
 # 1.4.3
 
