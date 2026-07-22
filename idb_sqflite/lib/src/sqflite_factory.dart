@@ -3,7 +3,6 @@ import 'package:idb_shim/idb.dart';
 import 'package:idb_shim/src/common/common_factory.dart';
 import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
-import 'package:idb_sqflite/src/sqflite_global_store.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 
@@ -20,18 +19,8 @@ class IdbFactorySqflite extends IdbFactoryBase {
   @override
   bool get persistent => true;
 
-  SqfliteGlobalStore? _globalStore;
-
-  /// global store
-  SqfliteGlobalStore get globalStore =>
-      _globalStore ??= SqfliteGlobalStore(sqfliteDatabaseFactory);
-
   @override
   String get name => idbFactoryNameSqflite;
-
-  set globalStoreDbName(String dbName) {
-    globalStore.dbName = dbName;
-  }
 
   @override
   Future<Database> open(
@@ -42,16 +31,13 @@ class IdbFactorySqflite extends IdbFactoryBase {
   }) async {
     checkOpenArguments(version: version, onUpgradeNeeded: onUpgradeNeeded);
 
-    var added = false;
     try {
-      added = await globalStore.addDatabaseName(dbName);
       var database = IdbDatabaseSqflite(this, dbName);
       await database.open(version, onUpgradeNeeded);
       return database;
     } catch (e) {
-      if (added) {
-        await globalStore.deleteDatabaseName(dbName);
-      }
+      // ignore: avoid_print
+      print('fail to open $dbName ($e)');
       rethrow;
     }
   }
@@ -63,17 +49,18 @@ class IdbFactorySqflite extends IdbFactoryBase {
   }) async {
     var path = sanitizeDbName(dbName);
     await sqfliteDatabaseFactory.deleteDatabase(path);
-    await globalStore.deleteDatabaseName(dbName);
     return this;
   }
 
   @override
   bool get supportsDatabaseNames {
-    return true;
+    return false;
   }
 
   @override
-  Future<List<String>> getDatabaseNames() => globalStore.getDatabaseNames();
+  Future<List<String>> getDatabaseNames() => throw UnsupportedError(
+    'IdbFactorySqflite.getDatabaseNames not supported',
+  );
 
   // common implementation
   @override

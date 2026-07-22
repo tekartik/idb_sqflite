@@ -1,3 +1,8 @@
+# 1.4.4-1
+
+* Support sandbox
+* Remove support for getDatabaseNames
+
 # 1.4.3
 
 * Override `getDatabaseFullPath()`

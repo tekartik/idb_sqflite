@@ -232,6 +232,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       }
 
       var path = sanitizeDbName(name);
+
       return sqfliteDatabaseFactory.openDatabase(
         path,
         options: sqflite.OpenDatabaseOptions(

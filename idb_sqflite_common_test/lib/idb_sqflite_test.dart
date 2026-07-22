@@ -1,15 +1,27 @@
 // ignore: implementation_imports
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_test/idb_test_common.dart';
+import 'package:sqflite_common/sqflite.dart' show inMemoryDatabasePath;
 
 /// Define the tests
-void defineTests(IdbFactory? factory) {
+void defineTests(IdbFactory factory) {
   group('impl', () {
+    test('in memory', () async {
+      var db = await factory.open(
+        inMemoryDatabasePath,
+        onUpgradeNeeded: (e) {
+          var db = e.database;
+          db.createObjectStore('name', keyPath: 'keyPath', autoIncrement: true);
+        },
+        version: 1,
+      );
+      db.close();
+    });
     test('open_transaction_open', () async {
       Database? db;
       try {
         var dbName = 'delete_database.db';
-        await factory!.deleteDatabase(dbName);
+        await factory.deleteDatabase(dbName);
 
         void initializeDatabase(VersionChangeEvent e) {
           var db = e.database;
@@ -52,7 +64,7 @@ void defineTests(IdbFactory? factory) {
         }
 
         var name = 'impl_multi_entry';
-        await factory!.deleteDatabase(name);
+        await factory.deleteDatabase(name);
         var db = await factory.open(
           name,
           version: 1,
@@ -114,7 +126,7 @@ void defineTests(IdbFactory? factory) {
         }
 
         var name = 'impl_multi_entry';
-        await factory!.deleteDatabase(name);
+        await factory.deleteDatabase(name);
         var db = await factory.open(
           name,
           version: 1,
@@ -156,7 +168,7 @@ void defineTests(IdbFactory? factory) {
           }
 
           var name = 'parallel_multi_insert';
-          await factory!.deleteDatabase(name);
+          await factory.deleteDatabase(name);
           var db = await factory.open(
             name,
             version: 1,
