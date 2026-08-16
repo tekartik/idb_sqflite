@@ -23,7 +23,7 @@ class SqfliteGlobalStore {
   /// sqflite Database
   Future<sqflite.Database> get database async => _database ??= await () async {
     try {
-      return sqfliteDatabaseFactory.openDatabase(
+      return await sqfliteDatabaseFactory.openDatabase(
         dbName,
         options: sqflite.OpenDatabaseOptions(
           version: 1,
