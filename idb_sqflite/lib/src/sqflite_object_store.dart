@@ -566,6 +566,10 @@ class IdbObjectStoreSqflite
   });
 
   @override
+  Future<void> pagedRowUpdate(Object primaryKey, Object value) =>
+      checkStore(() => putImpl(toSqfliteValue(value), primaryKey));
+
+  @override
   Stream<CursorWithValue> openCursor({
     key,
     KeyRange? range,

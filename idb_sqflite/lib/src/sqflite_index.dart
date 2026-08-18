@@ -247,6 +247,10 @@ class IdbIndexSqflite
   });
 
   @override
+  Future<void> pagedRowUpdate(Object primaryKey, Object value) =>
+      _checkIndex(() => store.putImpl(toSqfliteValue(value), primaryKey));
+
+  @override
   Stream<Cursor> openKeyCursor({
     key,
     KeyRange? range,
