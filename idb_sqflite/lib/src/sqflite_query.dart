@@ -1,10 +1,12 @@
-// ignore_for_file: implementation_imports, unnecessary_string_interpolations
+// ignore_for_file: unnecessary_string_interpolations
 
 import 'package:idb_shim/idb_client.dart';
-import 'package:idb_shim/src/common/common_value.dart';
+
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:sqflite_common/utils/utils.dart';
+
+import 'idb_import.dart';
 
 /// Sql query
 class SqfliteQuery {

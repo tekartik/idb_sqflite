@@ -1,5 +1,3 @@
-// ignore_for_file: implementation_imports
-
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';

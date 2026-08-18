@@ -1,9 +1,9 @@
 import 'package:idb_shim/idb.dart';
-// ignore: implementation_imports
-import 'package:idb_shim/src/common/mixin.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
+
+import 'idb_import.dart';
 
 /// idb_sqflite factory name
 const String idbFactoryNameSqflite = 'sqflite';

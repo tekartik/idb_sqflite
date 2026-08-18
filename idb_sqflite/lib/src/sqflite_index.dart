@@ -1,8 +1,5 @@
-// ignore_for_file: implementation_imports, unnecessary_string_interpolations
+// ignore_for_file: unnecessary_string_interpolations
 import 'package:idb_shim/idb_client.dart';
-import 'package:idb_shim/src/common/common_meta.dart';
-import 'package:idb_shim/src/common/common_validation.dart';
-import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_cursor.dart';
 import 'package:idb_sqflite/src/sqflite_key_path.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
@@ -12,6 +9,8 @@ import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
+
+import 'idb_import.dart';
 
 /// Index implementation
 class IdbIndexSqflite

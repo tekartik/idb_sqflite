@@ -1,4 +1,3 @@
-// ignore_for_file: implementation_imports
 import 'dart:async';
 
 import 'package:idb_shim/idb.dart';

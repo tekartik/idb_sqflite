@@ -1,7 +1,4 @@
-// ignore_for_file: implementation_imports
-
 import 'package:idb_shim/idb_client.dart';
-import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_index.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
@@ -11,6 +8,7 @@ import 'package:idb_sqflite/src/sqflite_value.dart';
 import 'package:synchronized/synchronized.dart';
 
 import 'core_imports.dart';
+import 'idb_import.dart';
 
 /// Snapshot mixin for sqflite
 mixin IdbRecordSnapshotSqfliteMixin {}

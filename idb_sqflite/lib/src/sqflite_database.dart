@@ -1,11 +1,8 @@
-// ignore_for_file: implementation_imports, avoid_function_literals_in_foreach_calls
+// ignore_for_file: avoid_function_literals_in_foreach_calls
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:idb_shim/idb_client.dart';
-import 'package:idb_shim/src/common/common_database.dart';
-import 'package:idb_shim/src/common/common_meta.dart';
-import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/core_imports.dart';
 import 'package:idb_sqflite/src/sqflite_constant.dart';
 import 'package:idb_sqflite/src/sqflite_factory.dart';
@@ -14,6 +11,8 @@ import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
+
+import 'idb_import.dart';
 
 /// Sanitize the database name
 String sanitizeDbName(String name) => name;
