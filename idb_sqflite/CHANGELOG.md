@@ -1,3 +1,10 @@
+# 1.4.5-1
+
+* Apply the offset and the limit of an sdb query in sql (`LIMIT`/`OFFSET`) instead
+  of reading the whole table through a cursor, for `findRecords`, `findRecordKeys`,
+  `streamRecords`, `iterate` and `delete` on stores and indexes.
+* Depends on idb_shim 2.9.8-1+
+
 # 1.4.4
 
 * Support sandbox
