@@ -6,6 +6,7 @@ import 'package:idb_shim/src/common/common_value.dart';
 import 'package:idb_sqflite/src/sqflite_cursor.dart';
 import 'package:idb_sqflite/src/sqflite_key_path.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
+import 'package:idb_sqflite/src/sqflite_paged_query.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
@@ -15,7 +16,7 @@ import 'package:sqflite_common/sqlite_api.dart' as sqflite;
 /// Index implementation
 class IdbIndexSqflite
     with IdbSqfliteKeyPathMixin, IndexWithMetaMixin
-    implements Index {
+    implements Index, IdbPagedQuerySupport {
   /// Index implementation
   IdbIndexSqflite(this.store, this.meta);
 
@@ -180,6 +181,70 @@ class IdbIndexSqflite
       return primaryKey;
     });
   }
+
+  /// The index key of a result row.
+  Object _rowIndexKey(Map<String, Object?> row) => isCompositeKey
+      ? rowKeyValue(row, keyColumnNames)
+      : rowKeyValue(row, keyColumnName);
+
+  @override
+  Future<List<IdbCursorRow>> pagedRowList({
+    KeyRange? range,
+    String? direction,
+    int? offset,
+    int? limit,
+  }) => _checkIndex(() async {
+    var rows = await sqflitePagedRows(
+      transaction: transaction,
+      sqlTableName: sqlIndexViewName,
+      columns: [
+        ...keyColumnNames,
+        ...store.primaryKeyColumnNames,
+        valueColumnName,
+      ],
+      keyColumns: keyColumnNames,
+      range: range,
+      direction: direction,
+      offset: offset,
+      limit: limit,
+    );
+    return rows
+        .map(
+          (row) => IdbPagedCursorRow(
+            _rowIndexKey(row),
+            store.rowGetPrimaryKeyValue(row),
+            fromSqfliteValue(decodeValue(row[valueColumnName])!),
+          ),
+        )
+        .toList();
+  });
+
+  @override
+  Future<List<IdbKeyCursorRow>> pagedKeyRowList({
+    KeyRange? range,
+    String? direction,
+    int? offset,
+    int? limit,
+  }) => _checkIndex(() async {
+    var rows = await sqflitePagedRows(
+      transaction: transaction,
+      sqlTableName: sqlIndexViewName,
+      columns: [...keyColumnNames, ...store.primaryKeyColumnNames],
+      keyColumns: keyColumnNames,
+      range: range,
+      direction: direction,
+      offset: offset,
+      limit: limit,
+    );
+    return rows
+        .map(
+          (row) => IdbKeyCursorRow(
+            _rowIndexKey(row),
+            store.rowGetPrimaryKeyValue(row),
+          ),
+        )
+        .toList();
+  });
 
   @override
   Stream<Cursor> openKeyCursor({

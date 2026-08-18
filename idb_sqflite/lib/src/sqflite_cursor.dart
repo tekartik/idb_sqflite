@@ -63,7 +63,8 @@ class IdbIndexRecordSnapshotSqflite extends IdbRecordSnapshotSqflite {
   final Object key;
 }
 
-Object _keyValue(Map<String, Object?> map, Object? columnOrColumns) {
+/// Read a key (single or composite) from a result row.
+Object rowKeyValue(Map<String, Object?> map, Object? columnOrColumns) {
   if (columnOrColumns is Iterable) {
     var list = <dynamic>[];
     for (var column in columnOrColumns) {
@@ -406,8 +407,8 @@ mixin _IdbIndexCursorCommonControllerSqflite
           (row) => IdbIndexRecordSnapshotSqflite(
             store,
             index.isCompositeKey
-                ? _keyValue(row, keyColumnNames)
-                : _keyValue(row, keyColumnName),
+                ? rowKeyValue(row, keyColumnNames)
+                : rowKeyValue(row, keyColumnName),
             null,
             row,
           ),

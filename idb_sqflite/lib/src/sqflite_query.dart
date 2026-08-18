@@ -28,6 +28,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
     this.keyOrKeyRange,
     this._direction, {
     this.limit,
+    this.offset,
   });
 
   /// Columns
@@ -43,6 +44,10 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
   /// limit
   final int? limit;
+
+  /// offset, only meaningful with a [limit] for sqlite, a limit of -1 is
+  /// used when only an offset is given.
+  final int? offset;
   // Build during buildParameters
   String? _orderBy;
 
@@ -190,7 +195,9 @@ class SqfliteSelectQuery extends SqfliteQuery {
       where: sqlWhere,
       whereArgs: sqlWhereArgs,
       orderBy: _orderBy,
-      limit: limit,
+      // sqlite ignores OFFSET without a LIMIT, -1 means no limit.
+      limit: limit ?? ((offset ?? 0) > 0 ? -1 : null),
+      offset: offset,
     );
   }
 }

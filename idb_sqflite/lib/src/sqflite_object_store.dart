@@ -11,6 +11,7 @@ import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:idb_sqflite/src/sqflite_index.dart';
 import 'package:idb_sqflite/src/sqflite_key_path.dart';
+import 'package:idb_sqflite/src/sqflite_paged_query.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
@@ -21,7 +22,7 @@ import 'core_imports.dart';
 /// Object store implementation
 class IdbObjectStoreSqflite
     with IdbSqfliteKeyPathMixin, ObjectStoreWithMetaMixin
-    implements ObjectStore {
+    implements ObjectStore, IdbPagedQuerySupport {
   /// Object store implementation
   IdbObjectStoreSqflite(this.transaction, this.meta);
 
@@ -512,6 +513,57 @@ class IdbObjectStoreSqflite
   void deleteIndex(String name) {
     meta!.deleteIndex(database.meta, name);
   }
+
+  @override
+  Future<List<IdbCursorRow>> pagedRowList({
+    KeyRange? range,
+    String? direction,
+    int? offset,
+    int? limit,
+  }) => checkStore(() async {
+    var rows = await sqflitePagedRows(
+      transaction: transaction,
+      sqlTableName: sqlTableName,
+      columns: [...primaryKeyColumnNames, valueColumnName],
+      keyColumns: primaryKeyColumnNames,
+      range: range,
+      direction: direction,
+      offset: offset,
+      limit: limit,
+    );
+    return rows.map((row) {
+      // On a store cursor the key is the primary key.
+      var primaryKey = rowGetPrimaryKeyValue(row);
+      return IdbPagedCursorRow(
+        primaryKey,
+        primaryKey,
+        fromSqfliteValue(decodeValue(row[valueColumnName])!),
+      );
+    }).toList();
+  });
+
+  @override
+  Future<List<IdbKeyCursorRow>> pagedKeyRowList({
+    KeyRange? range,
+    String? direction,
+    int? offset,
+    int? limit,
+  }) => checkStore(() async {
+    var rows = await sqflitePagedRows(
+      transaction: transaction,
+      sqlTableName: sqlTableName,
+      columns: primaryKeyColumnNames,
+      keyColumns: primaryKeyColumnNames,
+      range: range,
+      direction: direction,
+      offset: offset,
+      limit: limit,
+    );
+    return rows.map((row) {
+      var primaryKey = rowGetPrimaryKeyValue(row);
+      return IdbKeyCursorRow(primaryKey, primaryKey);
+    }).toList();
+  });
 
   @override
   Stream<CursorWithValue> openCursor({

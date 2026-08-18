@@ -74,6 +74,7 @@ class IdbTransactionSqflite extends IdbTransactionBase
     List<Object>? whereArgs,
     String? orderBy,
     int? limit,
+    int? offset,
   }) => _txn.run(
     (txn) => txn.query(
       table,
@@ -81,6 +82,7 @@ class IdbTransactionSqflite extends IdbTransactionBase
       where: where,
       whereArgs: whereArgs,
       limit: limit,
+      offset: offset,
       orderBy: orderBy,
     ),
   );
