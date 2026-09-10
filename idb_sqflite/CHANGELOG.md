@@ -1,3 +1,7 @@
+# 1.4.5-2
+
+* Add `idb-sqflite-setup` agent skill in `skills/`, installable with `dart run skills@ get`
+
 # 1.4.5-1
 
 * Apply the offset and the limit of an sdb query in sql (`LIMIT`/`OFFSET`) instead
