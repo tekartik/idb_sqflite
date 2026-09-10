@@ -1,9 +1,6 @@
-# 1.4.5-2
+# 1.4.5
 
 * Add `idb-sqflite-setup` agent skill in `skills/`, installable with `dart run skills@ get`
-
-# 1.4.5-1
-
 * Apply the offset and the limit of an sdb query in sql (`LIMIT`/`OFFSET`) instead
   of reading the whole table through a cursor, for `findRecords`, `findRecordKeys`,
   `streamRecords`, `iterate` and `delete` on stores and indexes.
