@@ -18,8 +18,8 @@ environment:
 
 dependencies:
   path:
-  idb_sqflite: '>=1.4.1-1'
-  idb_shim: '>=2.9.7-1 <4.0.0'
+  idb_sqflite: '>=1.4.6-1'
+  idb_shim: '>=2.9.10-1 <4.0.0'
   sqflite_common:
   idb_test:
     git:

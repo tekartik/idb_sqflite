@@ -6,6 +6,7 @@ import 'package:idb_sqflite/src/sqflite_cursor.dart';
 import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:idb_sqflite/src/sqflite_index.dart';
+import 'package:idb_sqflite/src/sqflite_join_query.dart';
 import 'package:idb_sqflite/src/sqflite_key_path.dart';
 import 'package:idb_sqflite/src/sqflite_paged_query.dart';
 import 'package:idb_sqflite/src/sqflite_query.dart';
@@ -19,7 +20,7 @@ import 'idb_import.dart';
 /// Object store implementation
 class IdbObjectStoreSqflite
     with IdbSqfliteKeyPathMixin, ObjectStoreWithMetaMixin
-    implements ObjectStore, IdbPagedQuerySupport {
+    implements ObjectStore, IdbPagedQuerySupport, IdbJoinQuerySupport {
   /// Object store implementation
   IdbObjectStoreSqflite(this.transaction, this.meta);
 
@@ -204,6 +205,69 @@ class IdbObjectStoreSqflite
   // Convenient access to all indecies
   Iterable<IdbIndexSqflite> get _indecies =>
       meta!.indecies.map((meta) => IdbIndexSqflite(this, meta));
+
+  /// The index of this store named [name], null when there is none.
+  IdbIndexSqflite? indexOrNull(String name) {
+    for (var index in _indecies) {
+      if (index.name == name) {
+        return index;
+      }
+    }
+    return null;
+  }
+
+  /// The joined side of a native join, null when it cannot be resolved in sql.
+  SqfliteJoinTarget? joinTargetOf(String joinStoreName, String? joinIndexName) {
+    IdbObjectStoreSqflite joinStore;
+    try {
+      joinStore =
+          transaction.objectStore(joinStoreName) as IdbObjectStoreSqflite;
+    } catch (_) {
+      // Not in the scope of this transaction.
+      return null;
+    }
+    // A composite primary key is a list, which neither an index key nor a
+    // json field holds as a key, so such a join never matches anything.
+    if (joinStore.isPrimaryCompositeKey) {
+      return null;
+    }
+    if (joinIndexName == null) {
+      return SqfliteJoinTarget(
+        from: joinStore.sqlTableName,
+        keyColumn: joinStore.primaryKeyColumn,
+        primaryKeyColumn: joinStore.primaryKeyColumn,
+      );
+    }
+    var joinIndex = joinStore.indexOrNull(joinIndexName);
+    // A composite index key is a list, never a single join key.
+    if (joinIndex == null || joinIndex.isCompositeKey) {
+      return null;
+    }
+    return SqfliteJoinTarget(
+      // The view joins the index table back to the store, so it carries the
+      // index key, the primary key and the value of each matching record.
+      from: joinIndex.sqlIndexViewName,
+      keyColumn: joinIndex.keyColumnNames.first,
+      primaryKeyColumn: joinStore.primaryKeyColumn,
+    );
+  }
+
+  /// An index of this store usable to resolve a join on [joinKeyPath], null
+  /// when there is none.
+  ///
+  /// A multiEntry index has one row per array element, which would multiply
+  /// the joined rows; a composite index holds a list, which is never the
+  /// primary key of the joined store.
+  IdbIndexSqflite? _joinIndex(String joinKeyPath) {
+    for (var index in _indecies) {
+      if (index.keyPath == joinKeyPath &&
+          !index.multiEntry &&
+          !index.isCompositeKey) {
+        return index;
+      }
+    }
+    return null;
+  }
 
   /// Add a record
   Future<Object> addImpl(Object value, [Object? key]) async {
@@ -565,6 +629,95 @@ class IdbObjectStoreSqflite
   @override
   Future<void> pagedRowUpdate(Object primaryKey, Object value) =>
       checkStore(() => putImpl(toSqfliteValue(value), primaryKey));
+
+  @override
+  Future<List<IdbJoinRow>?> joinedRowList({
+    required String joinStoreName,
+    String? joinIndexName,
+    String? joinKeyPath,
+    KeyRange? range,
+    String? direction,
+    int? offset,
+    int? limit,
+    bool inner = false,
+    bool withValue = true,
+    bool withJoinedValue = true,
+  }) => checkStore(() async {
+    var target = joinTargetOf(joinStoreName, joinIndexName);
+    if (target == null) {
+      return null;
+    }
+
+    SqfliteJoinSource source;
+    if (joinKeyPath == null) {
+      // The primary key of the record is the join key, so a composite one
+      // (a list) can never match.
+      if (isPrimaryCompositeKey) {
+        return null;
+      }
+      source = SqfliteJoinSource(
+        from: sqlTableName,
+        primaryKeyColumns: primaryKeyColumnNames,
+        rangeColumns: primaryKeyColumnNames,
+        keySource: SqfliteJoinKeySource.ownKey,
+        keyColumn: primaryKeyColumn,
+      );
+    } else {
+      var index = _joinIndex(joinKeyPath);
+      if (index != null) {
+        // The join key is indexed: read it from the index table, an index
+        // seek and no json parsing.
+        source = SqfliteJoinSource(
+          from: sqlTableName,
+          primaryKeyColumns: primaryKeyColumnNames,
+          rangeColumns: primaryKeyColumnNames,
+          keySource: SqfliteJoinKeySource.sourceIndex,
+          keyColumn: index.keyColumnNames.first,
+          indexTable: index.sqlIndexTableName,
+        );
+      } else {
+        // No index on the join key, read it out of the stored value.
+        var jsonPath = sqliteJsonPath(joinKeyPath);
+        if (jsonPath == null) {
+          return null;
+        }
+        if (!await sqfliteSupportsJsonExtract(database, transaction)) {
+          return null;
+        }
+        source = SqfliteJoinSource(
+          from: sqlTableName,
+          primaryKeyColumns: primaryKeyColumnNames,
+          rangeColumns: primaryKeyColumnNames,
+          keySource: SqfliteJoinKeySource.value,
+          keyColumn: valueColumnName,
+          jsonPath: jsonPath,
+        );
+      }
+    }
+
+    var rows = await sqfliteJoinedRows(
+      transaction: transaction,
+      source: source,
+      target: target,
+      range: range,
+      direction: direction,
+      offset: offset,
+      limit: limit,
+      inner: inner,
+      withValue: withValue,
+      withJoinedValue: withJoinedValue,
+      joinAlwaysNeeded: joinIndexName != null,
+    );
+    return rows
+        .map(
+          (row) => sqfliteJoinRowOf(
+            row,
+            primaryKey: rowGetPrimaryKeyValue(row),
+            withValue: withValue,
+          ),
+        )
+        .toList();
+  });
 
   @override
   Stream<CursorWithValue> openCursor({

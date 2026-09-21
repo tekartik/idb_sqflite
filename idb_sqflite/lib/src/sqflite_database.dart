@@ -77,6 +77,10 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   /// The sqflite database
   sqflite.Database? sqlDb;
 
+  /// Whether the sqlite of this database has the json1 functions, null until
+  /// probed. See `sqfliteSupportsJsonExtract`.
+  bool? supportsJsonExtract;
+
   /// apply schema changes
   Future applySchemaChanges(IdbOpenTransactionSqflite tx) async {
     final txnMeta =
@@ -335,6 +339,9 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       if (!upgrading) {
         await _loadStores(transaction);
       }
+
+      // The stores meta is loaded either way at this point.
+      await _ensureIndexPrimaryIdIndexes(transaction);
     }
 
     // Special transaction without store
@@ -364,6 +371,51 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
     return store;
+  }
+
+  /// Create the index on the record id column of every index table missing it.
+  ///
+  /// It is what deleting or updating a record needs to find its index rows
+  /// (instead of scanning the whole index table), and what a native join walks
+  /// to reach the index key of a record. Index tables created before it was
+  /// added get it here, on the first open; afterwards this costs one select.
+  Future<void> _ensureIndexPrimaryIdIndexes(
+    IdbTransactionSqflite transaction,
+  ) async {
+    // Index table of each wanted index, by index name.
+    var wanted = <String, String>{};
+    for (var storeName in meta.objectStoreNames) {
+      var storeMeta = meta.getObjectStore(storeName);
+      if (storeMeta == null) {
+        continue;
+      }
+      var store = IdbObjectStoreSqflite(transaction, storeMeta);
+      for (var indexMeta in storeMeta.indecies) {
+        var index = IdbIndexSqflite(store, indexMeta);
+        wanted[index.sqlPrimaryIdIndexName] = index.sqlIndexTableName;
+      }
+    }
+    if (wanted.isEmpty) {
+      return;
+    }
+    var rows = await transaction.rawQuery(
+      "SELECT $nameField FROM sqlite_master WHERE type = 'index'",
+      null,
+    );
+    var existing = rows.map((row) => row[nameField]).toSet();
+    var missing = wanted.keys
+        .where((name) => !existing.contains(name))
+        .toList();
+    if (missing.isEmpty) {
+      return;
+    }
+    await transaction.batch((batch) {
+      for (var name in missing) {
+        batch.execute(
+          'CREATE INDEX IF NOT EXISTS $name ON ${wanted[name]} ($primaryIdColumnName)',
+        );
+      }
+    });
   }
 
   /// Load stores meta data

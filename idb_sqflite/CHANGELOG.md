@@ -1,3 +1,17 @@
+# 1.4.6-1
+
+* Implement `IdbJoinQuerySupport` on stores and indexes, resolving an sdb join
+  natively as a single sql `LEFT JOIN`/`INNER JOIN` (per chunk) instead of one
+  query per distinct join key. The join key is read from an index when the
+  join key path is indexed, from the stored value (`json_extract`) otherwise,
+  or from the record/index key itself when there is no join key path; the
+  joined side is the target store or the view of its index.
+* Create an index on the record id column of every index table (backfilled on
+  first open of an older database), used to find a record's index rows without
+  scanning the index table, and by a native join to reach the index key of a
+  record from an index-sourced join key.
+* Depends on idb_shim 2.9.10-1+
+
 # 1.4.5
 
 * Add `idb-sqflite-setup` agent skill in `skills/`, installable with `dart run skills@ get`

@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_string_interpolations
 import 'package:idb_shim/idb_client.dart';
 import 'package:idb_sqflite/src/sqflite_cursor.dart';
+import 'package:idb_sqflite/src/sqflite_join_query.dart';
 import 'package:idb_sqflite/src/sqflite_key_path.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_paged_query.dart';
@@ -15,7 +16,7 @@ import 'idb_import.dart';
 /// Index implementation
 class IdbIndexSqflite
     with IdbSqfliteKeyPathMixin, IndexWithMetaMixin
-    implements Index, IdbPagedQuerySupport {
+    implements Index, IdbPagedQuerySupport, IdbJoinQuerySupport {
   /// Index implementation
   IdbIndexSqflite(this.store, this.meta);
 
@@ -43,6 +44,13 @@ class IdbIndexSqflite
 
   /// primary key index name
   String get sqlPrimaryKeyIndexName => '${sqlIndexTableName}__pk';
+
+  /// Name of the index on the record id column alone.
+  ///
+  /// Distinct from `keyColumnNameToSqlIndexName(primaryIdColumnName)`, which
+  /// is the index on the key columns *followed by* the record id.
+  String get sqlPrimaryIdIndexName =>
+      '${sqlIndexTableName}__${primaryIdColumnName}_only';
 
   /// key column name to sql index name
   String keyColumnNameToSqlIndexName(String keyColumnName) =>
@@ -104,6 +112,14 @@ class IdbIndexSqflite
 
       batch.execute(
         'CREATE INDEX ${keyColumnNameToSqlIndexName(primaryIdColumnName)} ON $tableName (${keyColumnNames.join(', ')}, $primaryIdColumnName)',
+      );
+
+      // ...and on the record id alone, to find the rows of one record instead
+      // of scanning the whole index table. Updating or deleting a record
+      // deletes its index rows by record id, and a native join walks from a
+      // record to its index key.
+      batch.execute(
+        'CREATE INDEX $sqlPrimaryIdIndexName ON $tableName ($primaryIdColumnName)',
       );
     });
   }
@@ -185,6 +201,65 @@ class IdbIndexSqflite
   Object _rowIndexKey(Map<String, Object?> row) => isCompositeKey
       ? rowKeyValue(row, keyColumnNames)
       : rowKeyValue(row, keyColumnName);
+
+  @override
+  Future<List<IdbJoinRow>?> joinedRowList({
+    required String joinStoreName,
+    String? joinIndexName,
+    String? joinKeyPath,
+    KeyRange? range,
+    String? direction,
+    int? offset,
+    int? limit,
+    bool inner = false,
+    bool withValue = true,
+    bool withJoinedValue = true,
+  }) => _checkIndex(() async {
+    // Iterating an index, the index key is the join key: a key path would be
+    // another key altogether.
+    if (joinKeyPath != null) {
+      return null;
+    }
+    // A composite index key is a list, which is never a single join key.
+    if (isCompositeKey) {
+      return null;
+    }
+    var target = store.joinTargetOf(joinStoreName, joinIndexName);
+    if (target == null) {
+      return null;
+    }
+    var rows = await sqfliteJoinedRows(
+      transaction: transaction,
+      // The view joins the index table back to the store, so one scan of it
+      // in index key order gives the key, the primary key and the value of
+      // every record, without reading any key out of a value.
+      source: SqfliteJoinSource(
+        from: sqlIndexViewName,
+        primaryKeyColumns: primaryKeyColumnNames,
+        rangeColumns: keyColumnNames,
+        keySource: SqfliteJoinKeySource.ownKey,
+        keyColumn: keyColumnNames.first,
+      ),
+      target: target,
+      range: range,
+      direction: direction,
+      offset: offset,
+      limit: limit,
+      inner: inner,
+      withValue: withValue,
+      withJoinedValue: withJoinedValue,
+      joinAlwaysNeeded: joinIndexName != null,
+    );
+    return rows
+        .map(
+          (row) => sqfliteJoinRowOf(
+            row,
+            primaryKey: rowGetPrimaryKeyValue(row),
+            withValue: withValue,
+          ),
+        )
+        .toList();
+  });
 
   @override
   Future<List<IdbCursorRow>> pagedRowList({
