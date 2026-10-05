@@ -1,4 +1,4 @@
-# 1.4.6-1
+# 1.4.6
 
 * Implement `IdbJoinQuerySupport` on stores and indexes, resolving an sdb join
   natively as a single sql `LEFT JOIN`/`INNER JOIN` (per chunk) instead of one
