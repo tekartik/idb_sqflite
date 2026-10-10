@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'io/idb_io.dart' if (dart.library.js_interop) 'web/idb_web.dart';
 

@@ -14,17 +14,17 @@ publish_to: none
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.12.0
+  sdk: ^3.13.0
 
 dependencies:
   flutter:
     sdk: flutter
   path_provider: ">=2.1.6"
   path:
-  idb_shim: ">=2.9.0-1"
-  idb_sqflite: ">=1.3.6-1"
-  sqflite: '>=2.3.0'
-  sqflite_common_ffi: '>=2.3.0'
+  idb_shim: ">=2.9.3"
+  idb_sqflite: ">=1.4.2"
+  sqflite: ">=2.4.3"
+  sqflite_common_ffi: ">=2.4.1"
   sqflite_common:
   sqflite_ffi: '>=0.1.0+1'
   idb_sqflite_common_test:
@@ -35,14 +35,17 @@ dependencies:
     git:
       url: https://github.com/tekartik/idb_shim.dart
       path: idb_test
+  # The design widgets, as the tekartik flutter packages use them.
+  material_ui: ">=1.5.0"
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   # flutter_driver:
   #  sdk: flutter
-  process_run: '>=0.12.0-0'
-  dev_test: '>=1.0.0'
-  flutter_lints: '>=2.0.2'
+  process_run: ">=1.3.4"
+  dev_test: ">=1.0.3"
+  flutter_lints: ">=6.0.0"
   tekartik_app_dev_menu:
     git:
       url: https://github.com/tekartik/app_common_utils.dart
