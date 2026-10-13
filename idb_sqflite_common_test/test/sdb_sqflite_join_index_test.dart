@@ -137,8 +137,10 @@ Future main() async {
         SdbTransactionMode.readWrite,
         (txn) async {
           await parentStore.record(1).put(txn, {'label': 'p1'});
-          await childStore.record(1).put(txn, {'parentId': 1});
+          // Not added in primary key order, records sharing an index key
+          // still come back by primary key.
           await childStore.record(2).put(txn, {'parentId': 1});
+          await childStore.record(1).put(txn, {'parentId': 1});
           await childStore.record(3).put(txn, {'parentId': 9});
           await childStore.record(4).put(txn, <String, Object?>{});
         },
@@ -153,14 +155,18 @@ Future main() async {
       var index = txn.objectStore(childStore.name).index('parentId');
       expect(index, isA<IdbJoinQuerySupport>());
 
-      var rows = await (index as IdbJoinQuerySupport).joinedRowList(
-        joinStoreName: parentStore.name,
-      );
+      var joinIndex = index as IdbJoinQuerySupport;
+      var rows = await joinIndex.joinedRowList(joinStoreName: parentStore.name);
       expect(rows, isNotNull, reason: 'the native join must be used');
       // Record 4 has no index key, so it is not in the index at all.
       expect(rows!.map((row) => row.primaryKey).toList(), [1, 2, 3]);
       expect(rows.map((row) => row.joinKey).toList(), [1, 1, 9]);
       expect(rows.map((row) => row.joinedPrimaryKey).toList(), [1, 1, null]);
+      var prevRows = await joinIndex.joinedRowList(
+        joinStoreName: parentStore.name,
+        direction: idbDirectionPrev,
+      );
+      expect(prevRows!.map((row) => row.primaryKey).toList(), [3, 2, 1]);
       // json1 is never needed when the key comes from an index.
       expect((raw as IdbDatabaseSqflite).supportsJsonExtract, isNull);
 
@@ -310,7 +316,15 @@ Future main() async {
           reason: 'the index key must give the order, $indexReason',
         );
         expect(
-          indexDetails.any((detail) => detail.contains('TEMP B-TREE')),
+          // The records sharing an index key are sorted by primary key (a
+          // temp b-tree for the last term of the order), never the whole
+          // result.
+          indexDetails.any(
+            (detail) =>
+                detail.contains('TEMP B-TREE') &&
+                !detail.contains('LAST TERM') &&
+                !detail.contains('RIGHT PART'),
+          ),
           isFalse,
           reason: 'the order must come from the index, $indexReason',
         );

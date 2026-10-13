@@ -1,3 +1,19 @@
+# 1.5.0
+
+* Requests of a transaction run one at a time, in the order they are made,
+  like IndexedDB: a cursor opened right after an unawaited `put` sees the
+  record and its index keys (a `put` of a new key could run its insert after
+  the cursor query).
+* Records sharing an index key are ordered by primary key (in the direction of
+  the query), like IndexedDB: index cursors, `getAll`, `getAllKeys`, `get`,
+  `getKey`, sdb paged queries and native joins (they used to follow the
+  insertion order).
+* `Index.get` and `Index.getKey` accept a `KeyRange`.
+* `Index.getKey` returns the whole primary key of a store with an array
+  `keyPath` (it returned its first item only).
+* `delete()` on a key cursor (`openKeyCursor`) fails, like IndexedDB and the
+  memory implementation.
+
 # 1.4.6
 
 * Implement `IdbJoinQuerySupport` on stores and indexes, resolving an sdb join

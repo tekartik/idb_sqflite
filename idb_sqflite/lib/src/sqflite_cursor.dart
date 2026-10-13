@@ -128,6 +128,14 @@ abstract mixin class _IdbCommonCursorSqfliteMixin<T extends Cursor> {
   }
 
   Future delete() async {
+    if (this is! CursorWithValue) {
+      // Run in the transaction to keep it alive, mimic Chrome behavior
+      await _ctlr.transaction.run(() async {
+        throw StateError(
+          'Cannot call cursor.delete when openKeyCursor is used, try openCursor instead',
+        );
+      });
+    }
     if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
       var i = index + 1;
       while (i < _ctlr._rows.length) {
@@ -336,6 +344,10 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
   /// The list of key [pk] or [pk1...]
   List<String> get keyColumnNames;
 
+  /// The primary key columns ordering the rows sharing an index key, null
+  /// for a store.
+  List<String>? get orderPrimaryKeyColumnNames => null;
+
   IdbObjectStoreSqflite get store;
 
   String get sqlTableName;
@@ -353,6 +365,7 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
       keyColumnNames,
       keyOrKeyRange,
       direction,
+      primaryKeyColumns: orderPrimaryKeyColumnNames,
     );
     return query.execute(transaction).then((rs) {
       rows = rs;
@@ -393,6 +406,9 @@ mixin _IdbIndexCursorCommonControllerSqflite
   List<String> get keyColumnNames => index.keyColumnNames;
 
   List<String> get primaryKeyColumnNames => store.primaryKeyColumnNames;
+
+  @override
+  List<String> get orderPrimaryKeyColumnNames => primaryKeyColumnNames;
 
   @override
   String get sqlTableName => index.sqlIndexViewName;

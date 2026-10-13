@@ -148,9 +148,15 @@ class IdbObjectStoreSqflite
     return IdbIndexSqflite(this, indexMeta);
   }
 
-  // Don't make it async as it must run before completed is called
-  /// Check the store is ready
-  Future<T> checkStore<T>(Future<T> Function() computation) async {
+  /// Check the store is ready then run [computation], after the requests
+  /// placed before it in the transaction.
+  ///
+  /// The request is queued synchronously, so that the request order is the
+  /// call order.
+  Future<T> checkStore<T>(Future<T> Function() computation) =>
+      transaction.requestLock.synchronized(() => _checkStore(computation));
+
+  Future<T> _checkStore<T>(Future<T> Function() computation) async {
     // this is also an indicator
     //if (!ready) {
     // Make sure the db was not upgrade

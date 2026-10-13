@@ -10,11 +10,15 @@ export 'package:idb_shim/utils/idb_cursor_utils.dart'
 /// Run a select applying the offset and the limit in sql, so that only the
 /// wanted rows are read (a cursor would read the whole table and skip the
 /// rows in dart).
+///
+/// [primaryKeyColumns] orders the rows sharing an index key, see
+/// [SqfliteSelectQuery.primaryKeyColumns].
 Future<List<Map<String, Object?>>> sqflitePagedRows({
   required IdbTransactionSqflite? transaction,
   required String sqlTableName,
   required List<String> columns,
   required List<String> keyColumns,
+  List<String>? primaryKeyColumns,
   KeyRange? range,
   String? direction,
   int? offset,
@@ -28,6 +32,7 @@ Future<List<Map<String, Object?>>> sqflitePagedRows({
     direction ?? idbDirectionNext,
     limit: limit,
     offset: offset,
+    primaryKeyColumns: primaryKeyColumns,
   );
   return query.execute(transaction);
 }

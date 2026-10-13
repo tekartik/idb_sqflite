@@ -5,6 +5,7 @@ import 'package:idb_sqflite/src/sqflite_database.dart';
 import 'package:idb_sqflite/src/sqflite_object_store.dart';
 import 'package:idb_sqflite/src/sqflite_transaction_wrapper.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
+import 'package:synchronized/synchronized.dart';
 import 'idb_import.dart';
 
 /// Internal
@@ -33,6 +34,12 @@ class IdbTransactionSqflite extends IdbTransactionBase
   IdbTransactionMeta? meta;
   late SqfliteTransactionWrapper _txn;
   // Use for aborted
+
+  /// Runs the requests of this transaction one at a time, in the order they
+  /// were placed, like IndexedDB: a request made of several statements (a put
+  /// inserting the record then its index keys) is done before the next one
+  /// (a cursor opened right after it) starts.
+  final requestLock = Lock();
 
   /// Database
   IdbDatabaseSqflite get idbDatabaseSqflite => database as IdbDatabaseSqflite;

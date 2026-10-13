@@ -31,6 +31,7 @@ class SqfliteSelectQuery extends SqfliteQuery {
     this._direction, {
     this.limit,
     this.offset,
+    this.primaryKeyColumns,
   });
 
   /// Columns
@@ -43,6 +44,12 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
   /// key columns
   List<String> keyColumns;
+
+  /// Primary key columns of an index query, ordering the rows sharing the
+  /// same index key (by primary key, like IndexedDB, in the same direction).
+  ///
+  /// null for a store query, the key columns being the primary key already.
+  final List<String>? primaryKeyColumns;
 
   /// limit
   final int? limit;
@@ -178,7 +185,10 @@ class SqfliteSelectQuery extends SqfliteQuery {
 
     // order not needed for COUNT(*)
     if (order != null) {
-      _orderBy = keyColumns.map((column) => '$column $order').join(', ');
+      _orderBy = [
+        ...keyColumns,
+        ...?primaryKeyColumns,
+      ].map((column) => '$column $order').join(', ');
     }
     sqlWhere = sb.isEmpty ? null : sb.toString();
     sqlWhereArgs = args;

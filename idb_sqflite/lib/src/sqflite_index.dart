@@ -143,9 +143,15 @@ class IdbIndexSqflite
     });
   }
 
+  void _checkKeyOrRangeParam(Object key) {
+    if (key is! KeyRange) {
+      checkKeyParam(key);
+    }
+  }
+
   @override
   Future get(Object key) {
-    checkKeyParam(key);
+    _checkKeyOrRangeParam(key);
     return _checkIndex(() async {
       var row = await getFirstRow(
         key,
@@ -161,19 +167,21 @@ class IdbIndexSqflite
     });
   }
 
-  /// Returns null if not found
+  /// The first row (lowest key, then lowest primary key) matching a key or a
+  /// key range, null if not found.
   Future<Map<String, Object?>?> getFirstRow(
-    Object key, {
-    List<String>? columns,
+    Object keyOrKeyRange, {
+    required List<String> columns,
   }) async {
-    var condition = KeyPathWhere.keyEquals(this, key);
-    var rows = await transaction!.query(
+    var rows = await SqfliteSelectQuery(
+      columns,
       sqlIndexViewName,
-      columns: columns,
-      where: condition.where,
-      whereArgs: condition.whereArgs,
+      keyColumnNames,
+      keyOrKeyRange,
+      idbDirectionNext,
       limit: 1,
-    );
+      primaryKeyColumns: primaryKeyColumnNames,
+    ).execute(transaction);
     if (rows.isEmpty) {
       return null;
     }
@@ -183,17 +191,13 @@ class IdbIndexSqflite
   // Get the primary key
   @override
   Future getKey(key) {
-    checkKeyParam(key);
-    if (key is KeyRange) {
-      throw UnsupportedError('Index.getKey(keyRange) not supported');
-    }
+    _checkKeyOrRangeParam(key);
     return _checkIndex(() async {
       var row = await getFirstRow(key, columns: store.primaryKeyColumnNames);
       if (row == null) {
         return null;
       }
-      var primaryKey = decodeKey(row.values.first!);
-      return primaryKey;
+      return store.rowGetPrimaryKeyValue(row);
     });
   }
 
@@ -277,6 +281,7 @@ class IdbIndexSqflite
         valueColumnName,
       ],
       keyColumns: keyColumnNames,
+      primaryKeyColumns: store.primaryKeyColumnNames,
       range: range,
       direction: direction,
       offset: offset,
@@ -305,6 +310,7 @@ class IdbIndexSqflite
       sqlTableName: sqlIndexViewName,
       columns: [...keyColumnNames, ...store.primaryKeyColumnNames],
       keyColumns: keyColumnNames,
+      primaryKeyColumns: store.primaryKeyColumnNames,
       range: range,
       direction: direction,
       offset: offset,
@@ -450,6 +456,7 @@ class IdbIndexSqflite
         query,
         idbDirectionNext,
         limit: count,
+        primaryKeyColumns: primaryKeyColumnNames,
       );
       return selectQuery.execute(transaction).then((rs) {
         return rs
@@ -476,6 +483,7 @@ class IdbIndexSqflite
         query,
         idbDirectionNext,
         limit: count,
+        primaryKeyColumns: primaryKeyColumnNames,
       );
       return selectQuery.execute(transaction).then((rs) {
         return rs

@@ -114,8 +114,9 @@ class SqfliteJoinSource {
   /// Primary key columns of the iterated record, in [from].
   final List<String> primaryKeyColumns;
 
-  /// Columns the range and the order apply to: the primary key columns of a
-  /// store, the index key columns of an index.
+  /// Columns the range applies to and the order starts with (then the
+  /// [primaryKeyColumns]): the primary key columns of a store, the index key
+  /// columns of an index.
   final List<String> rangeColumns;
 
   /// Where the join key is read.
@@ -291,15 +292,20 @@ SqfliteJoinStatement sqfliteJoinStatement({
     args.addAll(query.sqlWhereArgs!);
   }
 
-  // Ordered by the range columns only, like every other query of this
-  // implementation: two records can share an index key, and the order of such
-  // a tie is left to sqlite rather than forced with the primary key, which
-  // would cost a sort (the index gives the key order, not the primary key
-  // order within a key).
+  // Ordered by the range columns then by primary key, like every other query
+  // of this implementation and IndexedDB: two records can share an index key.
+  // The index gives the key order only, so sqlite sorts the records sharing a
+  // key (a temp b-tree for the last terms of the order, not a full sort).
   var order = direction == idbDirectionPrev ? 'DESC' : 'ASC';
+  var orderColumns = [
+    ...source.rangeColumns,
+    ...source.primaryKeyColumns.where(
+      (column) => !source.rangeColumns.contains(column),
+    ),
+  ];
   sb.write(
     ' ORDER BY '
-    '${source.rangeColumns.map((column) => '${source.from}.$column $order').join(', ')}',
+    '${orderColumns.map((column) => '${source.from}.$column $order').join(', ')}',
   );
 
   // sqlite ignores OFFSET without a LIMIT, -1 means no limit.
