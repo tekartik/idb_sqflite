@@ -31,6 +31,17 @@ class IdbDatabaseErrorSqflite extends DatabaseError {
   }
 }
 
+/// DataError for an array key stored in a single column: idb_sqflite only
+/// stores the items of an array key path, one per column.
+DatabaseError sqfliteArrayKeyError(Object key) => DatabaseError(
+  'DataError: idb_sqflite does not support the array key $key outside an array keyPath',
+);
+
+/// ConstraintError for a key already in a store.
+DatabaseError sqfliteKeyExistsError(Object key) => DatabaseError(
+  'ConstraintError: Key $key already exists in the object store.',
+);
+
 bool _handleError(Object? e) {
   if (e is DatabaseError) {
     return false;

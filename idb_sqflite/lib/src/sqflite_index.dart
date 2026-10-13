@@ -138,7 +138,12 @@ class IdbIndexSqflite
   Future<int> count([keyOrKeyRange]) {
     return _checkIndex(() {
       var tableName = sqlIndexTableName;
-      var query = SqfliteCountQuery(tableName, keyColumnNames, keyOrKeyRange);
+      var query = SqfliteCountQuery(
+        tableName,
+        keyColumnNames,
+        keyOrKeyRange,
+        compositeKey: isCompositeKey,
+      );
       return query.count(transaction);
     });
   }
@@ -181,6 +186,7 @@ class IdbIndexSqflite
       idbDirectionNext,
       limit: 1,
       primaryKeyColumns: primaryKeyColumnNames,
+      compositeKey: isCompositeKey,
     ).execute(transaction);
     if (rows.isEmpty) {
       return null;
@@ -241,6 +247,7 @@ class IdbIndexSqflite
         from: sqlIndexViewName,
         primaryKeyColumns: primaryKeyColumnNames,
         rangeColumns: keyColumnNames,
+        compositeKey: isCompositeKey,
         keySource: SqfliteJoinKeySource.ownKey,
         keyColumn: keyColumnNames.first,
       ),
@@ -282,6 +289,7 @@ class IdbIndexSqflite
       ],
       keyColumns: keyColumnNames,
       primaryKeyColumns: store.primaryKeyColumnNames,
+      compositeKey: isCompositeKey,
       range: range,
       direction: direction,
       offset: offset,
@@ -311,6 +319,7 @@ class IdbIndexSqflite
       columns: [...keyColumnNames, ...store.primaryKeyColumnNames],
       keyColumns: keyColumnNames,
       primaryKeyColumns: store.primaryKeyColumnNames,
+      compositeKey: isCompositeKey,
       range: range,
       direction: direction,
       offset: offset,
@@ -342,12 +351,7 @@ class IdbIndexSqflite
       direction ?? idbDirectionNext,
       autoAdvance ?? false,
     );
-
-    checkOpenCursorArguments(key, range);
-    // Future
-    _checkIndex(() {
-      return ctlr.execute(key, range);
-    });
+    ctlr.open(key, range);
     return ctlr.stream;
   }
 
@@ -363,13 +367,7 @@ class IdbIndexSqflite
       direction ?? idbDirectionNext,
       autoAdvance ?? false,
     );
-
-    checkOpenCursorArguments(key, range);
-
-    // Future
-    _checkIndex(() {
-      return ctlr.execute(key, range);
-    });
+    ctlr.open(key, range);
     return ctlr.stream;
   }
 
@@ -387,10 +385,9 @@ class IdbIndexSqflite
         var keys = valueAsSet(keyValue);
         if (keys?.isNotEmpty ?? false) {
           for (var key in keys!) {
-            key = encodeKey(key!);
             var map = <String, Object?>{
               primaryIdColumnName: primaryId,
-              keyColumnName: key,
+              keyColumnName: sqfliteIndexColumnKey(key!),
             };
             batch.insert(sqlIndexTableName, map);
           }
@@ -406,7 +403,7 @@ class IdbIndexSqflite
             map[keyColumnName] = _encodeKeyOrNull((keyValue as List)[i]);
           }
         } else {
-          map[keyColumnName] = encodeKey(keyValue);
+          map[keyColumnName] = sqfliteIndexColumnKey(keyValue);
         }
         batch.insert(sqlIndexTableName, map);
       }
@@ -417,7 +414,7 @@ class IdbIndexSqflite
     if (key == null) {
       return null;
     }
-    return encodeKey(key);
+    return sqfliteIndexColumnKey(key);
   }
 
   /// Update a key
@@ -445,51 +442,46 @@ class IdbIndexSqflite
 
   @override
   Future<List<Object>> getAll([Object? query, int? count]) {
-    return _checkIndex(() {
-      var tableName = sqlIndexViewName;
-      var columns = [valueColumnName];
-      var keyColumnNames = this.keyColumnNames;
-      var selectQuery = SqfliteSelectQuery(
-        columns,
-        tableName,
-        keyColumnNames,
+    return _checkIndex(() async {
+      var rows = await _getAllQuery(
+        [valueColumnName],
         query,
-        idbDirectionNext,
-        limit: count,
-        primaryKeyColumns: primaryKeyColumnNames,
-      );
-      return selectQuery.execute(transaction).then((rs) {
-        return rs
-            .map(
-              (row) => fromSqfliteValue(
-                decodeValue(row[valueColumnName] as Object)!,
-              ),
-            )
-            .toList(growable: false);
-      });
+        count,
+      ).execute(transaction);
+      return rows
+          .map(
+            (row) =>
+                fromSqfliteValue(decodeValue(row[valueColumnName] as Object)!),
+          )
+          .toList(growable: false);
     });
   }
 
   @override
   Future<List<Object>> getAllKeys([query, int? count]) {
-    return _checkIndex(() {
-      var tableName = sqlIndexViewName;
-      var columns = primaryKeyColumnNames;
-      var keyColumnNames = this.keyColumnNames;
-      var selectQuery = SqfliteSelectQuery(
-        columns,
-        tableName,
-        keyColumnNames,
+    return _checkIndex(() async {
+      var rows = await _getAllQuery(
+        primaryKeyColumnNames,
         query,
-        idbDirectionNext,
-        limit: count,
-        primaryKeyColumns: primaryKeyColumnNames,
-      );
-      return selectQuery.execute(transaction).then((rs) {
-        return rs
-            .map((row) => rowGetPrimaryKeyValue(row))
-            .toList(growable: false);
-      });
+        count,
+      ).execute(transaction);
+      return rows
+          .map((row) => rowGetPrimaryKeyValue(row))
+          .toList(growable: false);
     });
   }
+
+  SqfliteSelectQuery _getAllQuery(
+    List<String> columns,
+    Object? query,
+    int? count,
+  ) => SqfliteSelectQuery.getAll(
+    columns,
+    sqlIndexViewName,
+    keyColumnNames,
+    query,
+    count,
+    primaryKeyColumns: primaryKeyColumnNames,
+    compositeKey: isCompositeKey,
+  );
 }

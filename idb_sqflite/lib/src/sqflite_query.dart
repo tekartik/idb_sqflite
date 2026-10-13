@@ -2,6 +2,7 @@
 
 import 'package:idb_shim/idb_client.dart';
 
+import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:idb_sqflite/src/sqflite_transaction.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 import 'package:sqflite_common/utils/utils.dart';
@@ -20,6 +21,67 @@ class SqfliteQuery {
 const String _sqlCountColumnName = '_COUNT';
 const _sqlCount = 'COUNT(*) AS $_sqlCountColumnName';
 
+/// Sql where clause matching nothing.
+const _sqlFalse = '1 = 0';
+
+/// The sql argument of a key stored in a single column.
+///
+/// Throws a DataError for an array key (only the items of an array key path
+/// are stored, one per column).
+Object sqfliteColumnKey(Object key) {
+  if (sqfliteIsArrayKey(key)) {
+    throw sqfliteArrayKeyError(key);
+  }
+  return encodeKey(key);
+}
+
+/// The sql value of a key stored in an index column.
+///
+/// A `List<int>` is still stored as a blob (as before 1.5.1, sorting after the
+/// strings like an array), other arrays throw a DataError.
+Object sqfliteIndexColumnKey(Object key) {
+  if (key is List<int>) {
+    return key;
+  }
+  return sqfliteColumnKey(key);
+}
+
+/// Where clause matching [key] in [keyColumns], its arguments added to
+/// [args].
+///
+/// [compositeKey] is true when [keyColumns] hold the items of an array key
+/// path, [integerKeys] when they are the INTEGER PRIMARY KEY of an
+/// autoIncrement store (which converts a text argument to a number, so only
+/// numbers can match).
+String sqfliteKeyEqualsWhere(
+  List<String> keyColumns,
+  Object key,
+  List<Object> args, {
+  required bool compositeKey,
+  bool integerKeys = false,
+}) {
+  List<Object> values;
+  if (compositeKey) {
+    // A single key or an array of another length is never equal.
+    if (!sqfliteIsArrayKey(key) || (key as List).length != keyColumns.length) {
+      return _sqlFalse;
+    }
+    values = _compositeKeyItems(key);
+  } else {
+    var value = sqfliteColumnKey(key);
+    if (integerKeys && value is! num) {
+      return _sqlFalse;
+    }
+    values = [value];
+  }
+  args.addAll(values);
+  return keyColumns.map((column) => '$column = ?').join(' AND ');
+}
+
+/// The sql arguments of the items of an array key, one per column.
+List<Object> _compositeKeyItems(List key) =>
+    key.map((item) => sqfliteColumnKey(item as Object)).toList();
+
 /// Select query
 class SqfliteSelectQuery extends SqfliteQuery {
   /// Select query
@@ -32,7 +94,32 @@ class SqfliteSelectQuery extends SqfliteQuery {
     this.limit,
     this.offset,
     this.primaryKeyColumns,
+    this.compositeKey = false,
+    this.integerKeys = false,
   });
+
+  /// Select of `getAll` and `getAllKeys`, in key order: a [count] of 0 (or
+  /// null) means no limit, like IndexedDB.
+  SqfliteSelectQuery.getAll(
+    List<String> columns,
+    String sqlTableName,
+    List<String> keyColumns,
+    Object? query,
+    int? count, {
+    List<String>? primaryKeyColumns,
+    bool compositeKey = false,
+    bool integerKeys = false,
+  }) : this(
+         columns,
+         sqlTableName,
+         keyColumns,
+         query,
+         idbDirectionNext,
+         limit: (count ?? 0) > 0 ? count : null,
+         primaryKeyColumns: primaryKeyColumns,
+         compositeKey: compositeKey,
+         integerKeys: integerKeys,
+       );
 
   /// Columns
   List<String> columns;
@@ -50,6 +137,13 @@ class SqfliteSelectQuery extends SqfliteQuery {
   ///
   /// null for a store query, the key columns being the primary key already.
   final List<String>? primaryKeyColumns;
+
+  /// True when [keyColumns] hold the items of an array key path.
+  final bool compositeKey;
+
+  /// True when [keyColumns] is the INTEGER PRIMARY KEY of an autoIncrement
+  /// store: only number keys and bounds are compared to it.
+  final bool integerKeys;
 
   /// limit
   final int? limit;
@@ -84,102 +178,25 @@ class SqfliteSelectQuery extends SqfliteQuery {
       }
     }
     var args = <Object>[];
-    var sb = StringBuffer();
+    String? where;
 
+    var keyOrKeyRange = this.keyOrKeyRange;
     if (keyOrKeyRange is KeyRange) {
-      var keyRange = keyOrKeyRange as KeyRange;
-
-      var lowers = valueAsList(
-        keyRange.lower,
-      )?.map((key) => encodeKey(key as Object)).toList(growable: false);
-      var uppers = valueAsList(
-        keyRange.upper,
-      )?.map((key) => encodeKey(key as Object)).toList(growable: false);
-      assert(lowers == null || lowers.length == keyColumns.length);
-      assert(uppers == null || uppers.length == keyColumns.length);
-
-      // lower
-      var sbLower = StringBuffer();
-      if (lowers != null) {
-        for (var i = 0; i < keyColumns.length; i++) {
-          var column = keyColumns[i];
-          var key = lowers[i];
-
-          // last
-          if (i == keyColumns.length - 1) {
-            if (keyRange.lowerOpen) {
-              sbLower.write('$column > ?');
-            } else {
-              sbLower.write('$column >= ?');
-            }
-            args.add(key);
-          } else {
-            sbLower.write('($column > ?) OR ($column = ? AND (');
-            args.addAll([key, key]);
-          }
-        }
-
-        // close parenthesis
-        for (var i = 1; i < keyColumns.length; i++) {
-          sbLower.write('))');
-        }
-      }
-
-      // upper
-      var sbUpper = StringBuffer();
-      if (uppers != null) {
-        for (var i = 0; i < keyColumns.length; i++) {
-          var column = keyColumns[i];
-          var key = uppers[i];
-
-          // last
-          if (i == keyColumns.length - 1) {
-            if (keyRange.upperOpen) {
-              sbUpper.write('$column < ?');
-            } else {
-              sbUpper.write('$column <= ?');
-            }
-            args.add(key);
-          } else {
-            sbUpper.write('($column < ?) OR ($column = ? AND (');
-            args.addAll([key, key]);
-          }
-        }
-
-        // close parenthesis
-        for (var i = 1; i < keyColumns.length; i++) {
-          sbUpper.write('))');
-        }
-      }
-
-      if (sbLower.isEmpty) {
-        if (sbUpper.isNotEmpty) {
-          sb.write(sbUpper.toString());
-        }
-      } else {
-        if (sbUpper.isEmpty) {
-          sb.write(sbLower.toString());
-        } else {
-          sb.write('($sbLower) AND ($sbUpper)');
-        }
-      }
+      where = _rangeWhere(keyOrKeyRange, args);
     } else if (keyOrKeyRange != null) {
-      var keys = valueAsList(keyOrKeyRange)!;
-      // We're missing some keys, make it false
-      if (keys.length != keyColumns.length) {
-        sb.write('1 = 0');
-      } else {
-        sb.write('${keyColumns.map((column) => '$column = ?').join(' AND ')}');
-        args.addAll(keys.map((key) => encodeKey(key as Object)));
-      }
+      where = sqfliteKeyEqualsWhere(
+        keyColumns,
+        keyOrKeyRange,
+        args,
+        compositeKey: compositeKey,
+        integerKeys: integerKeys,
+      );
     } else {
       // Not null needed for index key
       // Not it using pk[1] but using k1, k2...
       if (keyColumns.isNotEmpty &&
           !keyColumns.first.startsWith(primaryKeyColumnName)) {
-        sb.write(
-          '${keyColumns.map((column) => '$column NOT NULL').join(' AND ')}',
-        );
+        where = keyColumns.map((column) => '$column NOT NULL').join(' AND ');
       }
     }
 
@@ -190,8 +207,115 @@ class SqfliteSelectQuery extends SqfliteQuery {
         ...?primaryKeyColumns,
       ].map((column) => '$column $order').join(', ');
     }
-    sqlWhere = sb.isEmpty ? null : sb.toString();
+    sqlWhere = where;
     sqlWhereArgs = args;
+  }
+
+  /// Where clause of a key range, null when it matches every key.
+  String? _rangeWhere(KeyRange keyRange, List<Object> args) {
+    var lowerArgs = <Object>[];
+    var upperArgs = <Object>[];
+    var lower = keyRange.lower == null
+        ? null
+        : _boundWhere(
+            keyRange.lower as Object,
+            open: keyRange.lowerOpen,
+            lower: true,
+            args: lowerArgs,
+          );
+    var upper = keyRange.upper == null
+        ? null
+        : _boundWhere(
+            keyRange.upper as Object,
+            open: keyRange.upperOpen,
+            lower: false,
+            args: upperArgs,
+          );
+    if (lower == _sqlFalse || upper == _sqlFalse) {
+      return _sqlFalse;
+    }
+    args
+      ..addAll(lowerArgs)
+      ..addAll(upperArgs);
+    if (lower == null) {
+      return upper;
+    } else if (upper == null) {
+      return lower;
+    }
+    return '($lower) AND ($upper)';
+  }
+
+  /// Where clause of a [lower] (or upper) bound, null when every key is in
+  /// range, [_sqlFalse] when none is.
+  ///
+  /// The bound is compared to the key columns like IndexedDB: an array bound
+  /// item by item then by length, an array key is after any other key, and
+  /// numbers are before strings (then binaries).
+  String? _boundWhere(
+    Object bound, {
+    required bool open,
+    required bool lower,
+    required List<Object> args,
+  }) {
+    var columnCount = keyColumns.length;
+    List<Object> values;
+    if (compositeKey) {
+      // Every array key is after a single key.
+      if (!sqfliteIsArrayKey(bound)) {
+        return lower ? null : _sqlFalse;
+      }
+      values = _compositeKeyItems(bound as List);
+      if (values.length < columnCount) {
+        // A key starting with the bound is after it (it is longer).
+        open = !lower;
+      } else if (values.length > columnCount) {
+        // A key equal to the start of the bound is before it (it is shorter).
+        values = values.sublist(0, columnCount);
+        open = lower;
+      }
+      if (values.isEmpty) {
+        // Every array key is after the empty array.
+        return lower ? null : _sqlFalse;
+      }
+    } else {
+      var value = sqfliteColumnKey(bound);
+      // Every number is before a string or a binary.
+      if (integerKeys && value is! num) {
+        return lower ? _sqlFalse : null;
+      }
+      values = [value];
+    }
+    return _lexicographicWhere(values, open: open, lower: lower, args: args);
+  }
+
+  /// (k1 > ?) OR (k1 = ? AND (k2 >= ?)) for the first key columns.
+  String _lexicographicWhere(
+    List<Object> values, {
+    required bool open,
+    required bool lower,
+    required List<Object> args,
+  }) {
+    var operator = lower ? '>' : '<';
+    var sb = StringBuffer();
+    for (var i = 0; i < values.length; i++) {
+      var column = keyColumns[i];
+      var value = values[i];
+
+      // last
+      if (i == values.length - 1) {
+        sb.write(open ? '$column $operator ?' : '$column $operator= ?');
+        args.add(value);
+      } else {
+        sb.write('($column $operator ?) OR ($column = ? AND (');
+        args.addAll([value, value]);
+      }
+    }
+
+    // close parenthesis
+    for (var i = 1; i < values.length; i++) {
+      sb.write('))');
+    }
+    return sb.toString();
   }
 
   /// Execute the query
@@ -220,8 +344,10 @@ class SqfliteCountQuery extends SqfliteSelectQuery {
   SqfliteCountQuery(
     String sqlTableName,
     List<String> keyColumns,
-    Object? keyOrKeyRange,
-  ) //
+    Object? keyOrKeyRange, {
+    super.compositeKey,
+    super.integerKeys,
+  }) //
   : super([_sqlCount], sqlTableName, keyColumns, keyOrKeyRange, null);
 
   /// Count

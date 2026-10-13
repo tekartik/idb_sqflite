@@ -1,4 +1,5 @@
 import 'package:idb_sqflite/src/idb_import.dart';
+import 'package:idb_sqflite/src/sqflite_query.dart';
 import 'package:idb_sqflite/src/sqflite_utils.dart';
 
 /// Where clause for a keyPath
@@ -6,19 +7,21 @@ class KeyPathWhere {
   /// Where clause for a keyPath
   KeyPathWhere(this.where, this.whereArgs);
 
-  /// Create a where clause for a keyPath
-  factory KeyPathWhere.keyEquals(IdbSqfliteKeyPathMixin keyPath, Object key) {
-    var where = keyPath.keyColumnNames.map((name) => '$name = ?').join(' AND ');
-    var whereArgs = itemOrItemsToList(key)!.cast<Object>();
-    return KeyPathWhere(where, whereArgs);
-  }
-
-  /// Create a where clause for a primary key
-  factory KeyPathWhere.pkEquals(IdbSqfliteKeyPathMixin keyPath, Object key) {
-    var where = keyPath.primaryKeyColumnNames
-        .map((name) => '$name = ?')
-        .join(' AND ');
-    var whereArgs = itemOrItemsToList(key)!.cast<Object>();
+  /// Create a where clause for a primary key, [integerKeys] for an
+  /// autoIncrement store.
+  factory KeyPathWhere.pkEquals(
+    IdbSqfliteKeyPathMixin keyPath,
+    Object key, {
+    bool integerKeys = false,
+  }) {
+    var whereArgs = <Object>[];
+    var where = sqfliteKeyEqualsWhere(
+      keyPath.primaryKeyColumnNames,
+      key,
+      whereArgs,
+      compositeKey: keyPath.isPrimaryCompositeKey,
+      integerKeys: integerKeys,
+    );
     return KeyPathWhere(where, whereArgs);
   }
 

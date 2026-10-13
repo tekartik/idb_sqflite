@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// Wrap a key path
 String wrapKeyPath(String keyPath) => keyPath.replaceAll('.', '__');
 
@@ -29,15 +31,22 @@ String primaryKeyIndexToKeyName(int index) =>
 /// The row id column in store
 const sqliteRowId = 'rowid';
 
-/// Returns always a list unless null
-List? itemOrItemsToList(Object? itemOrItems) {
-  if (itemOrItems == null) {
-    return null;
+/// True for an array key, a [Uint8List] being a binary key.
+bool sqfliteIsArrayKey(Object? key) => key is List && key is! Uint8List;
+
+/// True if the keys [key1] and [key2] are equal, array and binary keys being
+/// compared item by item.
+bool sqfliteKeyEquals(Object? key1, Object? key2) {
+  if (key1 is List && key2 is List) {
+    if (key1.length != key2.length) {
+      return false;
+    }
+    for (var i = 0; i < key1.length; i++) {
+      if (!sqfliteKeyEquals(key1[i], key2[i])) {
+        return false;
+      }
+    }
+    return true;
   }
-  if (itemOrItems is List) {
-    return itemOrItems;
-  } else if (itemOrItems is Iterable) {
-    return itemOrItems.toList();
-  }
-  return [itemOrItems];
+  return key1 == key2;
 }

@@ -103,49 +103,76 @@ abstract mixin class _IdbCommonCursorSqfliteMixin<T extends Cursor> {
     advance(1);
   }
 
-  Future<void> update(Object value) async {
-    value = toSqfliteValue(value);
-    var store = _ctlr.store;
-    // Index only handle
-    if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
-      // Also update all records in the current list...
-      var i = index + 1;
-      while (i < _ctlr._rows.length) {
-        if (_ctlr._rows[i].primaryKey == primaryKey) {
-          // We know it is an index cursor
-          _ctlr._rows[i] = IdbIndexRecordSnapshotSqflite(
-            store,
-            _ctlr._rows[i].key,
-            primaryKey,
-            <String, Object?>{valueColumnName: encodeValue(value)},
-          );
-          i++;
+  /// Fails (in the transaction, to keep it alive, mimic Chrome behavior)
+  /// with [error].
+  Future<void> _fail(Error error) =>
+      _ctlr.transaction.run(() async => throw error);
+
+  /// Replaces with [replace] the next rows of the record of this cursor (the
+  /// other entries of a multiEntry index cursor), or removes them when
+  /// [replace] is null.
+  void _updateNextRecordRows(
+    IdbRecordSnapshotSqflite Function(IdbRecordSnapshotSqflite row)? replace,
+  ) {
+    if (_ctlr is! _IdbIndexCursorCommonControllerSqflite) {
+      return;
+    }
+    var rows = _ctlr._rows;
+    var i = index + 1;
+    while (i < rows.length) {
+      var row = rows[i];
+      if (sqfliteKeyEquals(row.primaryKey, primaryKey)) {
+        if (replace == null) {
+          rows.removeAt(i);
+          continue;
         }
-        i++;
+        rows[i] = replace(row);
+      }
+      i++;
+    }
+  }
+
+  Future<void> update(Object value) async {
+    var store = _ctlr.store;
+    if (store.transaction.meta!.mode != idbModeReadWrite) {
+      return _fail(DatabaseReadOnlyError());
+    }
+    var keyPath = store.keyPath;
+    if (keyPath != null && value is Map) {
+      var inlineKey = value.getKeyValue(keyPath);
+      if (inlineKey != null && !sqfliteKeyEquals(inlineKey, primaryKey)) {
+        return _fail(
+          DatabaseError(
+            'DataError: The effective object store of this cursor uses in-line keys and evaluating the key path of the value parameter results in a different value than the cursor\'s effective key.',
+          ),
+        );
       }
     }
+    value = toSqfliteValue(value);
+    // Also update the next rows of the record (index cursor only)
+    _updateNextRecordRows(
+      (row) => IdbIndexRecordSnapshotSqflite(
+        store,
+        row.key,
+        primaryKey,
+        <String, Object?>{valueColumnName: encodeValue(value)},
+      ),
+    );
     await store.putImpl(value, primaryKey);
   }
 
   Future delete() async {
+    if (_ctlr.transaction.meta!.mode != idbModeReadWrite) {
+      return _fail(DatabaseReadOnlyError());
+    }
     if (this is! CursorWithValue) {
-      // Run in the transaction to keep it alive, mimic Chrome behavior
-      await _ctlr.transaction.run(() async {
-        throw StateError(
+      await _fail(
+        StateError(
           'Cannot call cursor.delete when openKeyCursor is used, try openCursor instead',
-        );
-      });
+        ),
+      );
     }
-    if (_ctlr is _IdbIndexCursorCommonControllerSqflite) {
-      var i = index + 1;
-      while (i < _ctlr._rows.length) {
-        if (_ctlr._rows[i].primaryKey == primaryKey) {
-          _ctlr._rows.removeAt(i);
-        } else {
-          i++;
-        }
-      }
-    }
+    _updateNextRecordRows(null);
     await _ctlr.store.deleteImpl(primaryKey);
   }
 
@@ -270,6 +297,16 @@ abstract class _IdbCursorBaseControllerSqflite<T extends Cursor>
 
   Stream<T> get stream => _ctlr.stream;
 
+  @override
+  void _closeWithError(Object error, StackTrace stackTrace) {
+    lock.synchronized(() {
+      if (!_ctlr.isClosed) {
+        _ctlr.addError(error, stackTrace);
+        _ctlr.close();
+      }
+    });
+  }
+
   /// Set the result from query, this will trigger the controller
   set rows(List<Map<String, Object?>> rows);
 }
@@ -329,6 +366,9 @@ abstract class _IdbControllerSqflite {
   set _rows(List<IdbRecordSnapshotSqflite> rows);
 
   void _autoNext();
+
+  /// Ends the stream with [error], the cursor query failed.
+  void _closeWithError(Object error, StackTrace stackTrace);
 }
 
 mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
@@ -352,6 +392,22 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
 
   String get sqlTableName;
 
+  /// True when [keyColumnNames] hold the items of an array key path.
+  bool get compositeKey;
+
+  /// True when [keyColumnNames] is the INTEGER PRIMARY KEY of an autoIncrement
+  /// store.
+  bool get integerKeys => false;
+
+  /// Runs the cursor query as a request of the store, a failed query ending
+  /// the stream with its error.
+  void open(Object? key, KeyRange? keyRange) {
+    checkOpenCursorArguments(key, keyRange);
+    store
+        .checkStore(() => execute(key, keyRange))
+        .then<void>((_) {}, onError: _closeWithError);
+  }
+
   Future execute(Object? key, KeyRange? keyRange) {
     Object? keyOrKeyRange;
     if (key != null) {
@@ -366,6 +422,8 @@ mixin _IdbCursorCommonControllerSqflite on _IdbControllerSqflite {
       keyOrKeyRange,
       direction,
       primaryKeyColumns: orderPrimaryKeyColumnNames,
+      compositeKey: compositeKey,
+      integerKeys: integerKeys,
     );
     return query.execute(transaction).then((rs) {
       rows = rs;
@@ -386,6 +444,12 @@ mixin IdbStoreCursorCommonControllerSqflite
   List<String> get keyColumnNames => store.primaryKeyColumnNames;
 
   @override
+  bool get compositeKey => store.isPrimaryCompositeKey;
+
+  @override
+  bool get integerKeys => store.autoIncrement;
+
+  @override
   set rows(List<Map<String, Object?>> rows) {
     currentIndex = -1;
     _rows = rows
@@ -404,6 +468,9 @@ mixin _IdbIndexCursorCommonControllerSqflite
 
   @override
   List<String> get keyColumnNames => index.keyColumnNames;
+
+  @override
+  bool get compositeKey => index.isCompositeKey;
 
   List<String> get primaryKeyColumnNames => store.primaryKeyColumnNames;
 

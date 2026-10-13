@@ -106,6 +106,8 @@ class SqfliteJoinSource {
     required this.keyColumn,
     this.indexTable,
     this.jsonPath,
+    this.compositeKey = false,
+    this.integerKeys = false,
   });
 
   /// Table or view the rows are read from.
@@ -118,6 +120,14 @@ class SqfliteJoinSource {
   /// [primaryKeyColumns]): the primary key columns of a store, the index key
   /// columns of an index.
   final List<String> rangeColumns;
+
+  /// True when [rangeColumns] hold the items of an array key path, see
+  /// [SqfliteSelectQuery.compositeKey].
+  final bool compositeKey;
+
+  /// True when [rangeColumns] is the INTEGER PRIMARY KEY of an autoIncrement
+  /// store, see [SqfliteSelectQuery.integerKeys].
+  final bool integerKeys;
 
   /// Where the join key is read.
   final SqfliteJoinKeySource keySource;
@@ -229,6 +239,8 @@ SqfliteJoinStatement sqfliteJoinStatement({
     source.rangeColumns,
     range,
     direction,
+    compositeKey: source.compositeKey,
+    integerKeys: source.integerKeys,
   )..buildParameters();
 
   var joinKeySql = source.keyExpression;

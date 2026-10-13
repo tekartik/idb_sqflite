@@ -24,23 +24,30 @@ bool isBasicTypeNotNullNull(Object? value) {
 bool _looksLikeCustomType(Map map) =>
     (map.length == 1 && (map.keys.first as String).startsWith('@'));
 
+/// [map] with its values converted by [convert], [map] itself when none
+/// changes.
+Map _convertMapValues(Map map, Object? Function(Object? value) convert) {
+  Map? clone;
+  map.forEach((key, item) {
+    var converted = convert(item);
+    if (!identical(converted, item)) {
+      clone ??= Map<String, Object?>.from(map);
+      clone![key] = converted;
+    }
+  });
+  return clone ?? map;
+}
+
 Object? _toSqfliteValue(Object? value) {
   if (isBasicTypeOrNull(value)) {
     return value;
   } else if (value is Map) {
-    var map = value;
-    if (_looksLikeCustomType(map)) {
+    var map = _convertMapValues(value, _toSqfliteValue);
+    if (_looksLikeCustomType(value)) {
+      // Wrapped not to be read as a custom type, its values converted.
       return <String, Object?>{'@': map};
     }
-    Map? clone;
-    map.forEach((key, item) {
-      var converted = _toSqfliteValue(item);
-      if (!identical(converted, item)) {
-        clone ??= Map<String, Object?>.from(map);
-        clone![key] = converted;
-      }
-    });
-    return clone ?? map;
+    return map;
   } else if (value is Uint8List) {
     return <String, Object?>{'@Uint8List': base64Encode(value)};
   } else if (value is List) {
@@ -91,7 +98,11 @@ Object? _fromSqfliteValue(Object? value) {
       var key = map.keys.first as String;
       switch (key) {
         case '@':
-          return map.values.first as Object;
+          var wrapped = map.values.first as Object;
+          if (wrapped is Map) {
+            return _convertMapValues(wrapped, _fromSqfliteValue);
+          }
+          return wrapped;
         case '@DateTime':
           {
             try {
@@ -108,15 +119,7 @@ Object? _fromSqfliteValue(Object? value) {
           break;
       }
     }
-    Map? clone;
-    map.forEach((key, item) {
-      var converted = _fromSqfliteValue(item);
-      if (!identical(converted, item)) {
-        clone ??= Map<String, Object?>.from(map);
-        clone![key] = converted;
-      }
-    });
-    return clone ?? map;
+    return _convertMapValues(map, _fromSqfliteValue);
   } else if (value is List) {
     var list = value;
     List? clone;

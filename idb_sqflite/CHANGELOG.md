@@ -1,3 +1,35 @@
+# 1.5.1
+
+* `clear()` also deletes the index rows of the store (they were left, then
+  matched to the records reusing their row id). A database cleared by an older
+  version keeps those rows; deleting and recreating the index in an upgrade
+  removes them.
+* `add()` of an existing key fails with a ConstraintError on a store with an
+  array `keyPath`.
+* On an `autoIncrement` store, string keys never match the number keys in
+  `getObject`, `getKey`, `count`, `delete`, `getAll`, cursors and key ranges
+  (sqlite converted `'1'` to `1`). Its keys are still integers only: a `put`
+  or `add` with a text number key such as `'2'` stores the number `2`, other
+  keys fail.
+* An index cursor `update` no longer skips the next entry of the record (in a
+  multiEntry index), and `update`/`delete` handle the other entries of a
+  record with an array primary key.
+* A failed cursor query ends the cursor stream with its error (it never
+  completed).
+* Array keys are only supported as the items of an array `keyPath`: an array
+  key or key range bound for a store or an index without one fails with a
+  DataError (it gave wrong results or bad sql). A `List<int>` index value is
+  still stored as a binary.
+* Key range bounds of another length than an array `keyPath`, or a single key
+  bound, follow the IndexedDB key order (they failed).
+* A `Uint8List` key is a binary key, not an array.
+* Cursor `update` and `delete` in a readonly transaction fail with a
+  ReadOnlyError; cursor `update` of a value whose in-line key is another key
+  fails with a DataError.
+* `getAll`/`getAllKeys` with a count of 0 return every record, like IndexedDB.
+* A map with a single key starting with `@` has its values converted too (a
+  `DateTime` in it failed).
+
 # 1.5.0
 
 * Requests of a transaction run one at a time, in the order they are made,

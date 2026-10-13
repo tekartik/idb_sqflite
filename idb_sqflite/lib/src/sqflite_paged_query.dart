@@ -12,13 +12,17 @@ export 'package:idb_shim/utils/idb_cursor_utils.dart'
 /// rows in dart).
 ///
 /// [primaryKeyColumns] orders the rows sharing an index key, see
-/// [SqfliteSelectQuery.primaryKeyColumns].
+/// [SqfliteSelectQuery.primaryKeyColumns], [compositeKey] and [integerKeys]
+/// describe the key columns, see [SqfliteSelectQuery.compositeKey] and
+/// [SqfliteSelectQuery.integerKeys].
 Future<List<Map<String, Object?>>> sqflitePagedRows({
   required IdbTransactionSqflite? transaction,
   required String sqlTableName,
   required List<String> columns,
   required List<String> keyColumns,
   List<String>? primaryKeyColumns,
+  bool compositeKey = false,
+  bool integerKeys = false,
   KeyRange? range,
   String? direction,
   int? offset,
@@ -33,6 +37,8 @@ Future<List<Map<String, Object?>>> sqflitePagedRows({
     limit: limit,
     offset: offset,
     primaryKeyColumns: primaryKeyColumns,
+    compositeKey: compositeKey,
+    integerKeys: integerKeys,
   );
   return query.execute(transaction);
 }

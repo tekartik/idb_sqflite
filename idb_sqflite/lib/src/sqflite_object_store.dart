@@ -277,6 +277,31 @@ class IdbObjectStoreSqflite
 
   /// Add a record
   Future<Object> addImpl(Object value, [Object? key]) async {
+    // The columns of an array key are not a unique sql key.
+    if (key != null &&
+        isPrimaryCompositeKey &&
+        await getPrimaryId(key) != null) {
+      throw sqfliteKeyExistsError(key);
+    }
+    return _insertImpl(value, key);
+  }
+
+  /// Throws a DataError for a key that the sql primary key cannot hold.
+  void _checkPrimaryKey(Object key) {
+    if (isPrimaryCompositeKey) {
+      for (var item in key as List) {
+        sqfliteColumnKey(item as Object);
+      }
+    } else {
+      sqfliteColumnKey(key);
+    }
+  }
+
+  /// Insert a record whose key is not in the store.
+  Future<Object> _insertImpl(Object value, Object? key) async {
+    if (key != null) {
+      _checkPrimaryKey(key);
+    }
     Map? mapValue;
     if (value is Map) {
       if (keyPath != null && _getInlineKey(value) == null) {
@@ -339,7 +364,11 @@ class IdbObjectStoreSqflite
     if (key == null) {
       return addImpl(value);
     }
-    var condition = KeyPathWhere.pkEquals(this, key);
+    var condition = KeyPathWhere.pkEquals(
+      this,
+      key,
+      integerKeys: autoIncrement,
+    );
     var count = await transaction.update(
       sqlTableName,
       values,
@@ -347,7 +376,7 @@ class IdbObjectStoreSqflite
       whereArgs: condition.whereArgs,
     );
     if (count == 0) {
-      return addImpl(value, key);
+      return _insertImpl(value, key);
     }
 
     // Add the index value for each index
@@ -430,8 +459,11 @@ class IdbObjectStoreSqflite
     Object key, {
     required List<String> columns,
   }) async {
-    // keyPath ??= this.keyPath;
-    var condition = KeyPathWhere.pkEquals(this, key);
+    var condition = KeyPathWhere.pkEquals(
+      this,
+      key,
+      integerKeys: autoIncrement,
+    );
     var rows = await transaction.query(
       sqlTableName,
       columns: columns,
@@ -449,19 +481,6 @@ class IdbObjectStoreSqflite
   Future<int?> getPrimaryId(Object key) async {
     var row = await getFirstRow(key, columns: [sqliteRowId]);
     return row?.values.first as int?;
-  }
-
-  /// Unused for now
-  Future<List<int>> getPrimaryIds(KeyRange keyRange) async {
-    var select = SqfliteSelectQuery(
-      [sqliteRowId],
-      sqlTableName,
-      keyColumnNames,
-      keyRange,
-      null,
-    );
-    var rows = await select.execute(transaction);
-    return rows.map((row) => row[sqliteRowId] as int).toList();
   }
 
   /// Return the primary key
@@ -492,7 +511,12 @@ class IdbObjectStoreSqflite
   @override
   Future clear() {
     return _checkWritableStore(() async {
-      await transaction.delete(sqlTableName);
+      await transaction.batch((batch) {
+        for (var index in _indecies) {
+          batch.delete(index.sqlIndexTableName);
+        }
+        batch.delete(sqlTableName);
+      });
     });
   }
 
@@ -512,6 +536,8 @@ class IdbObjectStoreSqflite
         primaryKeyColumnNames,
         keyOrRange,
         null,
+        compositeKey: isPrimaryCompositeKey,
+        integerKeys: autoIncrement,
       );
       query.buildParameters();
       await transaction.batch((batch) {
@@ -593,6 +619,8 @@ class IdbObjectStoreSqflite
       sqlTableName: sqlTableName,
       columns: [...primaryKeyColumnNames, valueColumnName],
       keyColumns: primaryKeyColumnNames,
+      compositeKey: isPrimaryCompositeKey,
+      integerKeys: autoIncrement,
       range: range,
       direction: direction,
       offset: offset,
@@ -621,6 +649,8 @@ class IdbObjectStoreSqflite
       sqlTableName: sqlTableName,
       columns: primaryKeyColumnNames,
       keyColumns: primaryKeyColumnNames,
+      compositeKey: isPrimaryCompositeKey,
+      integerKeys: autoIncrement,
       range: range,
       direction: direction,
       offset: offset,
@@ -665,6 +695,7 @@ class IdbObjectStoreSqflite
         from: sqlTableName,
         primaryKeyColumns: primaryKeyColumnNames,
         rangeColumns: primaryKeyColumnNames,
+        integerKeys: autoIncrement,
         keySource: SqfliteJoinKeySource.ownKey,
         keyColumn: primaryKeyColumn,
       );
@@ -677,6 +708,8 @@ class IdbObjectStoreSqflite
           from: sqlTableName,
           primaryKeyColumns: primaryKeyColumnNames,
           rangeColumns: primaryKeyColumnNames,
+          compositeKey: isPrimaryCompositeKey,
+          integerKeys: autoIncrement,
           keySource: SqfliteJoinKeySource.sourceIndex,
           keyColumn: index.keyColumnNames.first,
           indexTable: index.sqlIndexTableName,
@@ -694,6 +727,8 @@ class IdbObjectStoreSqflite
           from: sqlTableName,
           primaryKeyColumns: primaryKeyColumnNames,
           rangeColumns: primaryKeyColumnNames,
+          compositeKey: isPrimaryCompositeKey,
+          integerKeys: autoIncrement,
           keySource: SqfliteJoinKeySource.value,
           keyColumn: valueColumnName,
           jsonPath: jsonPath,
@@ -737,13 +772,7 @@ class IdbObjectStoreSqflite
       direction ?? idbDirectionNext,
       autoAdvance ?? false,
     );
-
-    checkOpenCursorArguments(key, range);
-
-    // Future
-    checkStore(() {
-      return ctlr.execute(key, range);
-    });
+    ctlr.open(key, range);
     return ctlr.stream;
   }
 
@@ -759,13 +788,7 @@ class IdbObjectStoreSqflite
       direction ?? idbDirectionNext,
       autoAdvance ?? false,
     );
-
-    checkOpenCursorArguments(key, range);
-
-    // Future
-    checkStore(() {
-      return ctlr.execute(key, range);
-    });
+    ctlr.open(key, range);
     return ctlr.stream;
   }
 
@@ -776,6 +799,8 @@ class IdbObjectStoreSqflite
         sqlTableName,
         primaryKeyColumnNames,
         keyOrKeyRange,
+        compositeKey: isPrimaryCompositeKey,
+        integerKeys: autoIncrement,
       );
       return query.count(transaction);
     });
@@ -783,44 +808,43 @@ class IdbObjectStoreSqflite
 
   @override
   Future<List<Object>> getAll([Object? query, int? count]) {
-    return checkStore(() {
-      var columns = [valueColumnName];
-      var keyColumnNames = primaryKeyColumnNames;
-      var selectQuery = SqfliteSelectQuery(
-        columns,
-        sqlTableName,
-        keyColumnNames,
+    return checkStore(() async {
+      var rows = await _getAllQuery(
+        [valueColumnName],
         query,
-        idbDirectionNext,
-        limit: count,
-      );
-      return selectQuery.execute(transaction).then((rs) {
-        return rs
-            .map((row) => fromSqfliteValue(decodeValue(row[valueColumnName])!))
-            .toList(growable: false);
-      });
+        count,
+      ).execute(transaction);
+      return rows
+          .map((row) => fromSqfliteValue(decodeValue(row[valueColumnName])!))
+          .toList(growable: false);
     });
   }
 
   @override
   Future<List<Object>> getAllKeys([Object? query, int? count]) {
-    return checkStore(() {
-      var keyColumnNames = primaryKeyColumnNames;
-      var columns = keyColumnNames;
-
-      var selectQuery = SqfliteSelectQuery(
-        columns,
-        sqlTableName,
-        keyColumnNames,
+    return checkStore(() async {
+      var rows = await _getAllQuery(
+        primaryKeyColumnNames,
         query,
-        idbDirectionNext,
-        limit: count,
-      );
-      return selectQuery.execute(transaction).then((rs) {
-        return rs
-            .map((row) => rowGetPrimaryKeyValue(row))
-            .toList(growable: false);
-      });
+        count,
+      ).execute(transaction);
+      return rows
+          .map((row) => rowGetPrimaryKeyValue(row))
+          .toList(growable: false);
     });
   }
+
+  SqfliteSelectQuery _getAllQuery(
+    List<String> columns,
+    Object? query,
+    int? count,
+  ) => SqfliteSelectQuery.getAll(
+    columns,
+    sqlTableName,
+    primaryKeyColumnNames,
+    query,
+    count,
+    compositeKey: isPrimaryCompositeKey,
+    integerKeys: autoIncrement,
+  );
 }
