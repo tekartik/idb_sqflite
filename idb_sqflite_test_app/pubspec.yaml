@@ -22,7 +22,7 @@ dependencies:
   path_provider: ">=2.1.6"
   path:
   idb_shim: ">=2.9.3"
-  idb_sqflite: ">=1.4.2"
+  idb_sqflite: ">=1.5.0"
   sqflite: ">=2.4.3"
   sqflite_common_ffi: ">=2.4.1"
   sqflite_common:
