@@ -30,8 +30,8 @@ abstract class IdbRecordSnapshotSqflite {
   /// primary key
   Object get primaryKey => store.rowGetPrimaryKeyValue(row);
 
-  /// value
-  Object get value => fromSqfliteValue(decodeValue(row[valueColumnName])!);
+  /// value (with the generated key of an autoIncrement keyPath store)
+  Object get value => store.valueRowToRecord(primaryKey, row[valueColumnName]!);
 }
 
 /// Snapshot for sqflite

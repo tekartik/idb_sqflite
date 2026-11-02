@@ -242,6 +242,7 @@ class IdbObjectStoreSqflite
         from: joinStore.sqlTableName,
         keyColumn: joinStore.primaryKeyColumn,
         primaryKeyColumn: joinStore.primaryKeyColumn,
+        valueOf: joinStore.valueRowToRecord,
       );
     }
     var joinIndex = joinStore.indexOrNull(joinIndexName);
@@ -255,6 +256,7 @@ class IdbObjectStoreSqflite
       from: joinIndex.sqlIndexViewName,
       keyColumn: joinIndex.keyColumnNames.first,
       primaryKeyColumn: joinStore.primaryKeyColumn,
+      valueOf: joinStore.valueRowToRecord,
     );
   }
 
@@ -319,7 +321,7 @@ class IdbObjectStoreSqflite
 
     if (mapValue != null) {
       // Add the pk to the map in case it is needed by indexes.
-      _fixRecordValueWithPk(primaryKey, mapValue);
+      fixRecordValueWithPk(primaryKey, mapValue);
 
       // Add the index value for each index for external tables
       for (var index in _indecies) {
@@ -423,8 +425,10 @@ class IdbObjectStoreSqflite
     return false;
   }
 
-  /// A record with a keyPath added/read might not contain the pk in its value
-  void _fixRecordValueWithPk(Object pk, Object value) {
+  /// A record with a keyPath added/read might not contain the pk in its value:
+  /// an autoIncrement generated key is not in the stored value, it is set in
+  /// the value read (every read goes through [valueRowToRecord]).
+  void fixRecordValueWithPk(Object pk, Object value) {
     var keyPath = this.keyPath;
     if (keyPath != null) {
       if (value is Map) {
@@ -438,7 +442,7 @@ class IdbObjectStoreSqflite
   /// Convert a row to a record
   Object valueRowToRecord(Object pk, Object row) {
     var value = fromSqfliteValue(decodeValue(row)!);
-    _fixRecordValueWithPk(pk, value);
+    fixRecordValueWithPk(pk, value);
     return value;
   }
 
@@ -632,7 +636,7 @@ class IdbObjectStoreSqflite
       return IdbPagedCursorRow(
         primaryKey,
         primaryKey,
-        fromSqfliteValue(decodeValue(row[valueColumnName])!),
+        valueRowToRecord(primaryKey, row[valueColumnName]!),
       );
     }).toList();
   });
@@ -755,6 +759,8 @@ class IdbObjectStoreSqflite
             row,
             primaryKey: rowGetPrimaryKeyValue(row),
             withValue: withValue,
+            valueOf: valueRowToRecord,
+            joinedValueOf: target.valueOf,
           ),
         )
         .toList();
@@ -810,12 +816,17 @@ class IdbObjectStoreSqflite
   Future<List<Object>> getAll([Object? query, int? count]) {
     return checkStore(() async {
       var rows = await _getAllQuery(
-        [valueColumnName],
+        [...primaryKeyColumnNames, valueColumnName],
         query,
         count,
       ).execute(transaction);
       return rows
-          .map((row) => fromSqfliteValue(decodeValue(row[valueColumnName])!))
+          .map(
+            (row) => valueRowToRecord(
+              rowGetPrimaryKeyValue(row),
+              row[valueColumnName]!,
+            ),
+          )
           .toList(growable: false);
     });
   }

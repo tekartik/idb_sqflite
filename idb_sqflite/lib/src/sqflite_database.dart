@@ -113,6 +113,14 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
                 for (var row in rows) {
                   var value = decodeValue(row[valueColumnName]);
                   if (value is Map) {
+                    // A generated key is not in the stored value, the
+                    // primary key of an autoIncrement store is the row id.
+                    if (store.autoIncrement) {
+                      store.fixRecordValueWithPk(
+                        row[primaryIdColumnName] as Object,
+                        value,
+                      );
+                    }
                     var keyValue = mapValueAtKeyPath(value, index.keyPath);
                     index.insertKeyBatch(
                       batch,

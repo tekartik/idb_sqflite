@@ -161,6 +161,7 @@ class SqfliteJoinTarget {
     required this.from,
     required this.keyColumn,
     required this.primaryKeyColumn,
+    this.valueOf,
   });
 
   /// Table or view the joined rows are read from: the store table when
@@ -172,6 +173,10 @@ class SqfliteJoinTarget {
 
   /// Primary key column of the joined record, in [from].
   final String primaryKeyColumn;
+
+  /// Decodes a joined value read with its primary key (the joined store
+  /// sets its generated key in it), a plain decode when null.
+  final Object Function(Object primaryKey, Object rawValue)? valueOf;
 }
 
 /// Run a select resolving the join in sql, so that the joined rows are read in
@@ -334,22 +339,35 @@ SqfliteJoinStatement sqfliteJoinStatement({
 /// An [IdbJoinRow] from one row of [sqfliteJoinedRows].
 ///
 /// [primaryKey] is read by the caller, which knows the primary key columns of
-/// the iterated store.
+/// the iterated store. [valueOf] and [joinedValueOf] decode the value and the
+/// joined value with their primary key (the stores set their generated key in
+/// them), a plain decode when null.
 IdbJoinRow sqfliteJoinRowOf(
   Map<String, Object?> row, {
   required Object primaryKey,
   required bool withValue,
+  Object Function(Object primaryKey, Object rawValue)? valueOf,
+  Object Function(Object primaryKey, Object rawValue)? joinedValueOf,
 }) {
+  Object decode(
+    Object Function(Object primaryKey, Object rawValue)? valueOf,
+    Object? primaryKey,
+    Object rawValue,
+  ) => valueOf != null && primaryKey != null
+      ? valueOf(primaryKey, rawValue)
+      : fromSqfliteValue(decodeValue(rawValue)!);
+
   var rawJoinedValue = row[joinedValueColumnName];
+  var joinedPrimaryKey = row[joinedPrimaryKeyColumnName];
   return IdbJoinRow(
     primaryKey: primaryKey,
     value: withValue
-        ? fromSqfliteValue(decodeValue(row[valueColumnName])!)
+        ? decode(valueOf, primaryKey, row[valueColumnName]!)
         : null,
     joinKey: row[joinKeyColumnName],
-    joinedPrimaryKey: row[joinedPrimaryKeyColumnName],
+    joinedPrimaryKey: joinedPrimaryKey,
     joinedValue: rawJoinedValue == null
         ? null
-        : fromSqfliteValue(decodeValue(rawJoinedValue)!),
+        : decode(joinedValueOf, joinedPrimaryKey, rawJoinedValue),
   );
 }

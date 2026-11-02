@@ -267,6 +267,8 @@ class IdbIndexSqflite
             row,
             primaryKey: rowGetPrimaryKeyValue(row),
             withValue: withValue,
+            valueOf: store.valueRowToRecord,
+            joinedValueOf: target.valueOf,
           ),
         )
         .toList();
@@ -295,15 +297,14 @@ class IdbIndexSqflite
       offset: offset,
       limit: limit,
     );
-    return rows
-        .map(
-          (row) => IdbPagedCursorRow(
-            _rowIndexKey(row),
-            store.rowGetPrimaryKeyValue(row),
-            fromSqfliteValue(decodeValue(row[valueColumnName])!),
-          ),
-        )
-        .toList();
+    return rows.map((row) {
+      var primaryKey = store.rowGetPrimaryKeyValue(row);
+      return IdbPagedCursorRow(
+        _rowIndexKey(row),
+        primaryKey,
+        store.valueRowToRecord(primaryKey, row[valueColumnName]!),
+      );
+    }).toList();
   });
 
   @override
@@ -444,14 +445,16 @@ class IdbIndexSqflite
   Future<List<Object>> getAll([Object? query, int? count]) {
     return _checkIndex(() async {
       var rows = await _getAllQuery(
-        [valueColumnName],
+        [...primaryKeyColumnNames, valueColumnName],
         query,
         count,
       ).execute(transaction);
       return rows
           .map(
-            (row) =>
-                fromSqfliteValue(decodeValue(row[valueColumnName] as Object)!),
+            (row) => store.valueRowToRecord(
+              rowGetPrimaryKeyValue(row),
+              row[valueColumnName]!,
+            ),
           )
           .toList(growable: false);
     });
