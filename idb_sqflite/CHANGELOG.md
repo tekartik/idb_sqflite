@@ -1,3 +1,14 @@
+# 1.5.2-1
+
+* Fix the generated key of an autoIncrement keyPath store missing from the
+  values read by cursors, `getAll` (store and index) and joins, and from an
+  index created later on an existing store (it was only in the value of a
+  `get`). The rows already stored are read the same way.
+* A database opened through a sandbox factory (idb_shim 2.11.2-1) has the name
+  opened in the sandbox and the sandbox as factory, it is still an
+  `IdbDatabaseSqflite`.
+* Requires idb_shim 2.11.2-1.
+
 # 1.5.1
 
 * `clear()` also deletes the index rows of the store (they were left, then
