@@ -60,16 +60,21 @@ class IdbVersionChangeEventSqflite extends IdbVersionChangeEventBase {
 /// Database
 class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   /// Create a database
-  IdbDatabaseSqflite(super.factory, String name) {
+  IdbDatabaseSqflite(super.factory, String name)
+    : _sqfliteIdbFactory = factory {
     meta.name = name;
   }
+
+  /// The factory this database was created with, never a sandbox ([factory]
+  /// is the sandbox of a database opened through a sandbox).
+  final IdbFactory _sqfliteIdbFactory;
 
   /// The version change transaction
   IdbTransactionSqflite? versionChangeTransaction;
 
   /// The sqflite factory
   sqflite.DatabaseFactory get sqfliteDatabaseFactory =>
-      (super.factory as IdbFactorySqflite).sqfliteDatabaseFactory;
+      (_sqfliteIdbFactory as IdbFactorySqflite).sqfliteDatabaseFactory;
 
   @override
   IdbDatabaseMeta meta = IdbDatabaseMeta();
@@ -288,7 +293,7 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     }
 
     // Set right away needed from transaction
-    sqlDb = await openSqlDb(name);
+    sqlDb = await openSqlDb(meta.name);
 
     Future checkVersion(IdbTransactionSqflite transaction) async {
       var upgrading = false;
