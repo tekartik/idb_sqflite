@@ -338,7 +338,9 @@ class IdbIndexSqflite
 
   @override
   Future<void> pagedRowUpdate(Object primaryKey, Object value) =>
-      _checkIndex(() => store.putImpl(toSqfliteValue(value), primaryKey));
+      store.checkWritableStore(
+        () => store.putImpl(toSqfliteValue(value), primaryKey),
+      );
 
   @override
   Stream<Cursor> openKeyCursor({
@@ -380,12 +382,18 @@ class IdbIndexSqflite
   }
 
   /// Insert a key in a batch
+  ///
+  /// A value that cannot be a key (null, a map) is not indexed, like
+  /// IndexedDB does, instead of failing the write.
   void insertKeyBatch(sqflite.Batch batch, int? primaryId, Object? keyValue) {
-    if (keyValue != null) {
+    if (keyValue != null && !_isNotIndexedValue(keyValue)) {
       if (multiEntry) {
         var keys = valueAsSet(keyValue);
         if (keys?.isNotEmpty ?? false) {
           for (var key in keys!) {
+            if (_isNotIndexedValue(key)) {
+              continue;
+            }
             var map = <String, Object?>{
               primaryIdColumnName: primaryId,
               keyColumnName: sqfliteIndexColumnKey(key!),
@@ -397,11 +405,16 @@ class IdbIndexSqflite
         var map = <String, Object?>{primaryIdColumnName: primaryId};
         if (isCompositeKey) {
           assert(keyValue is List && keyValue.length == compositeKeyCount);
+          if ((keyValue as List).any(
+            (item) => item != null && _isNotIndexedValue(item),
+          )) {
+            return;
+          }
           // Create index on each key plus one for all
           for (var i = 0; i < compositeKeyCount; i++) {
             var keyColumnName = keyIndexToKeyName(i);
             // Can be null
-            map[keyColumnName] = _encodeKeyOrNull((keyValue as List)[i]);
+            map[keyColumnName] = _encodeKeyOrNull(keyValue[i]);
           }
         } else {
           map[keyColumnName] = sqfliteIndexColumnKey(keyValue);
@@ -409,6 +422,20 @@ class IdbIndexSqflite
         batch.insert(sqlIndexTableName, map);
       }
     }
+  }
+
+  /// True for a value that is never an index key: null, or a map that is not
+  /// the encoding of a `DateTime` or an `Uint8List` value (those still fail,
+  /// sqflite cannot hold them as a key yet).
+  bool _isNotIndexedValue(Object? value) =>
+      value == null || (value is Map && !_isEncodedKeyMap(value));
+
+  bool _isEncodedKeyMap(Map value) {
+    if (value.length != 1) {
+      return false;
+    }
+    var key = value.keys.first;
+    return key == '@DateTime' || key == '@Uint8List';
   }
 
   Object? _encodeKeyOrNull(Object? key) {

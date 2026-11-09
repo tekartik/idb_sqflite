@@ -9,14 +9,15 @@ debugging. None of this is a public API; do not write to these tables.
   `DatabaseFactory` with sqflite version `1`, `PRAGMA foreign_keys = ON` and
   `onDowngrade: onDatabaseDowngradeDelete`.
 * `__version`: single row, columns `value` (the IndexedDB version, `INT`) and
-  `signature` (`'com.tekartik.idb'`). A file whose signature does not match is
-  re-initialized (all tables dropped) on open.
+  `signature` (`'com.tekartik.idb'`). In a file whose signature does not
+  match, `__version` and `__stores` are created again (empty) on open.
 * `__stores`: one row per object store, columns `name` (`TEXT UNIQUE`) and
   `meta` (`TEXT`, JSON of the store meta: `keyPath`, `autoIncrement`,
   indexes).
 * An IndexedDB version upgrade runs `onUpgradeNeeded` inside one sqflite
-  transaction; schema changes are applied at the end of the callback (or before
-  the first operation on a new store) and `__version.value` is then updated.
+  transaction; schema changes are applied before each request of the callback
+  and at its end, then `__version.value` is updated. An error rolls the whole
+  transaction back.
 
 ## Object store tables
 
@@ -37,10 +38,13 @@ debugging. None of this is a public API; do not write to these tables.
 * View `<storeName>__<indexName>__j` joins the index table with the store
   table (`k*`, `pk*`, `v`) for queries.
 * SQL indexes `<storeName>__<indexName>__k` on the key column(s) (`UNIQUE`
-  when `unique: true`), `<storeName>__<indexName>__pid` on (keys, `pid`) and,
-  for an array key path, one `<storeName>__<indexName>__k<i>` per column.
+  when `unique: true`), `<storeName>__<indexName>__pid` on (keys, `pid`),
+  `<storeName>__<indexName>__pid_only` on `pid` and, for an array key path,
+  one `<storeName>__<indexName>__k<i>` per column.
 * `multiEntry: true` inserts one row per array element; combining it with an
   array key path is not supported.
+* A `null` or map index value (or array element) gets no row; a `bool` is
+  stored as `1` or `0`.
 
 ## Value encoding (`toSqfliteValue` / `fromSqfliteValue`)
 

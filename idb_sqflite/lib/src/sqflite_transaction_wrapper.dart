@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:idb_shim/idb_client.dart' show DatabaseError;
 import 'package:idb_sqflite/src/idb_import.dart';
 import 'package:idb_sqflite/src/sqflite_error.dart';
 import 'package:sqflite_common/sqlite_api.dart' as sqflite;
@@ -11,9 +12,18 @@ const debugTransactionWrapper = false; // devWarning(true);
 class SqfliteTransactionWrapper {
   /// Transaction wrapper
   SqfliteTransactionWrapper(this.sqfliteDatabase) {
+    // The result is only listened to through [completed]: an aborted
+    // transaction nobody waits for is not an uncaught error.
+    _completer.future.ignore();
     () async {
       try {
-        await sqfliteDatabase!.transaction((txn) async {
+        var sqfliteDatabase = this.sqfliteDatabase;
+        if (sqfliteDatabase == null) {
+          throw DatabaseError(
+            'InvalidStateError: The database connection is closed.',
+          );
+        }
+        await sqfliteDatabase.transaction((txn) async {
           if (debugTransactionWrapper) {
             _log('Transaction ready');
           }
@@ -32,6 +42,12 @@ class SqfliteTransactionWrapper {
       } catch (e, st) {
         if (debugTransactionWrapper) {
           _log('Transaction error $e');
+        }
+        // The transaction could not start (closed database): fail the
+        // requests waiting for it instead of letting them wait forever.
+        if (!_transactionReadyCompleter.isCompleted) {
+          _transactionReadyCompleter.future.ignore();
+          _transactionReadyCompleter.completeError(e, st);
         }
         _completeError(e, st);
       }

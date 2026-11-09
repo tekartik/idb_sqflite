@@ -1,3 +1,18 @@
+# 1.5.3
+
+* Fix schema changes made with no request between them in an upgrade: a store
+  or an index deleted then created again (`open` failed), created then deleted
+  (it came back or `open` failed)
+* A failed upgrade (`onUpgradeNeeded` throwing) is rolled back: the next open
+  runs it again (the database could not be opened any more)
+* A transaction on a closed database fails instead of never completing, an
+  aborted transaction nobody waits for is no longer an uncaught error
+* sdb: a row update in a read-only `iterate` fails (it wrote)
+* An indexed field holding null or a map (or such multiEntry items) is not
+  indexed, like IndexedDB, instead of failing the write
+* Documentation: getting started per platform, limitations checked against
+  the code, dartdoc, skill
+
 # 1.5.2
 
 * Fix the generated key of an autoIncrement keyPath store missing from the

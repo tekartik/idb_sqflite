@@ -129,8 +129,10 @@ Future<void> main() async {
   `StateError('cannot downgrade ...')`. Use `idbFactory.openOnDowngradeDelete(...)`
   (idb_shim `IdbFactoryExt`) when an older build should wipe the data instead.
 * Store and index names are used unquoted in SQL table names (`s__<store>`,
-  `<store>__<index>`). Use identifier-like names: letters, digits and `_`, no
-  spaces, dashes or dots.
+  `<store>__<index>`). Use identifier-like names: a letter then letters,
+  digits and `_`; no spaces, dashes or dots (`open` fails), no leading digit
+  for a store with an index (`2024__i` fails), no `__` (store `a` index
+  `b__c` and store `a__b` index `c` share one table).
 
 ### Keys and values (sqflite limits)
 
@@ -148,8 +150,12 @@ Future<void> main() async {
   (`isUtc == true`); `Uint8List` is read back as `Uint8List`. A `Map` whose
   only key starts with `@` is reserved for this encoding and is escaped
   transparently.
-* An index with `multiEntry: true` and an array `keyPath` throws
-  `UnsupportedError` at `createIndex`.
+* An index with `multiEntry: true` and an array `keyPath` throws a
+  `DatabaseError` at `createIndex`.
+* Indexed fields: `null` and maps are not indexed (like IndexedDB, the write
+  succeeds), a `bool` is indexed as the int `1` or `0`, a `DateTime`, an
+  `Uint8List` or a list of strings in the field of a non `multiEntry` index makes the
+  write fail. Index an int or a string derived from them instead.
 
 ### Transactions and schema
 
@@ -162,8 +168,10 @@ Future<void> main() async {
   `txn.abort()` rolls back.
 * Schema changes (`createObjectStore`, `deleteObjectStore`, `createIndex`,
   `deleteIndex`) are only valid inside `onUpgradeNeeded`. They are applied to
-  SQLite when the version-change transaction ends, or before the first
-  read/write of a freshly created store in that same callback.
+  SQLite before each request made in the callback and at its end, in any
+  order (delete then create again, create then delete). The whole upgrade is
+  one sqflite transaction: an `onUpgradeNeeded` that throws leaves the
+  database as it was, and the next open runs the upgrade again.
 
 ### Tests
 
@@ -422,7 +430,10 @@ void main() {
 * Awaiting network or UI work inside a transaction (`TransactionInactiveError`).
 * Calling `getDatabaseNames()` (unsupported) or expecting sandboxed and
   in-memory databases to share files with the base factory.
-* Store/index names with dashes, dots or spaces (used unquoted in SQL).
+* Store/index names with dashes, dots or spaces, or a store name starting
+  with a digit (used unquoted in SQL).
+* Indexing a `DateTime` or an `Uint8List` field (the write fails) or a
+  `bool` one (indexed as `1` or `0`).
 
 ## More
 

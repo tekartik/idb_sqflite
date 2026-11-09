@@ -87,25 +87,43 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
   bool? supportsJsonExtract;
 
   /// apply schema changes
+  ///
+  /// The changes made since the last call (the last request of the version
+  /// change transaction) are applied by name against the final meta, so that
+  /// their order does not matter: a store or an index deleted then created
+  /// again is dropped then created with its new definition, one created then
+  /// deleted is never created.
   Future applySchemaChanges(IdbOpenTransactionSqflite tx) async {
     final txnMeta =
         tx.meta
             as IdbVersionChangeTransactionMeta; // .versionChangeTransaction;
 
+    /// The stores created by these changes (empty, no index key to fill).
+    var createdStoreNames = txnMeta.createdStores
+        .map((store) => store.name)
+        .toSet();
+
     Future createIndecies() async {
       for (var storeName in txnMeta.createdIndexes.keys) {
-        var store =
-            versionChangeTransaction!.objectStore(storeName)
-                as IdbObjectStoreSqflite;
-        var indexMetas = txnMeta.createdIndexes[storeName]!;
-        for (var indexMeta in indexMetas) {
-          var index = IdbIndexSqflite(store, indexMeta);
+        var storeMeta = meta.getObjectStore(storeName);
+        // Store deleted afterwards
+        if (storeMeta == null) {
+          continue;
+        }
+        var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
+        var indexNames = txnMeta.createdIndexes[storeName]!
+            .map((indexMeta) => indexMeta.name!)
+            .toSet();
+        for (var indexName in indexNames) {
+          // Index deleted afterwards
+          if (!storeMeta.indexNames.contains(indexName)) {
+            continue;
+          }
+          var index = IdbIndexSqflite(store, storeMeta.index(indexName));
           await index.create();
 
           // if store was not created update the keys
-          if (!txnMeta.createdStores
-              .map((store) => store.name)
-              .contains(storeName)) {
+          if (!createdStoreNames.contains(storeName)) {
             var rows = await store.transaction.query(
               store.sqlTableName,
               columns: [
@@ -143,9 +161,12 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
 
     Future removeDeletedIndecies() async {
       for (var storeName in txnMeta.deletedIndexes.keys) {
-        var store =
-            versionChangeTransaction!.objectStore(storeName)
-                as IdbObjectStoreSqflite;
+        // Only the names are needed to drop the index tables, the store
+        // might have been deleted afterwards.
+        var store = IdbObjectStoreSqflite(
+          versionChangeTransaction!,
+          IdbObjectStoreMeta(storeName, null, false),
+        );
         var indexMetas = txnMeta.deletedIndexes[storeName]!;
         for (var indexMeta in indexMetas) {
           var index = IdbIndexSqflite(store, indexMeta);
@@ -155,14 +176,28 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     }
 
     Future createObjectStores() async {
-      for (var storeMeta in txnMeta.createdStores) {
+      for (var storeName in createdStoreNames) {
+        // The final definition, null if deleted afterwards
+        var storeMeta = meta.getObjectStore(storeName);
+        if (storeMeta == null) {
+          continue;
+        }
         var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
         await store.create();
       }
     }
 
     Future updateObjectStores() async {
-      for (var storeMeta in txnMeta.updatedStores) {
+      var storeNames = txnMeta.updatedStores.map((store) => store.name).toSet();
+      for (var storeName in storeNames) {
+        // A created store has its final meta already, a deleted one is gone.
+        if (createdStoreNames.contains(storeName)) {
+          continue;
+        }
+        var storeMeta = meta.getObjectStore(storeName);
+        if (storeMeta == null) {
+          continue;
+        }
         var store = IdbObjectStoreSqflite(versionChangeTransaction!, storeMeta);
         await store.update();
       }
@@ -178,16 +213,12 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
       }
     }
 
-    // Delete store that have been deleted
+    // Drop what was deleted first, a deleted store or index can be created
+    // again with the same name.
+    await removeDeletedIndecies();
     await removeDeletedObjectStores();
     await createObjectStores();
     await createIndecies();
-    await removeDeletedIndecies();
-
-    // Update meta for updated Store
-    txnMeta.updatedStores
-      ..removeAll(txnMeta.createdStores)
-      ..removeAll(txnMeta.deletedStores);
 
     await updateObjectStores();
 
@@ -361,9 +392,19 @@ class IdbDatabaseSqflite extends IdbDatabaseBase with DatabaseWithMetaMixin {
     var txnMeta = meta.transaction(null, idbModeReadWrite);
     var transaction = IdbOpenTransactionSqflite(this, txnMeta);
     try {
-      await transaction.run(() async {
-        await checkVersion(transaction);
-      });
+      try {
+        await transaction.run(() async {
+          await checkVersion(transaction);
+        });
+      } catch (_) {
+        // A failed upgrade must not commit what it did before the error:
+        // roll back, the next open runs it again from the old version.
+        transaction.abort();
+        try {
+          await transaction.completed;
+        } catch (_) {}
+        rethrow;
+      }
       await transaction.completed;
     } catch (e) {
       // On error close

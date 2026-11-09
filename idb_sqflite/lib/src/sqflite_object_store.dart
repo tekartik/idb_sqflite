@@ -136,7 +136,9 @@ class IdbObjectStoreSqflite
   String get compositePrimateKeyIndexName =>
       '${sqlTableName}__$primaryKeyColumnName';
 
-  Future<T> _checkWritableStore<T>(Future<T> Function() computation) {
+  /// Like [checkStore] for a write: fails with a read-only error in a
+  /// read-only transaction.
+  Future<T> checkWritableStore<T>(Future<T> Function() computation) {
     if (transaction.meta!.mode != idbModeReadWrite) {
       return Future.error(DatabaseReadOnlyError());
     }
@@ -338,7 +340,7 @@ class IdbObjectStoreSqflite
   @override
   Future<Object> add(Object value, [Object? key]) {
     value = toSqfliteValue(value);
-    return _checkWritableStore(
+    return checkWritableStore(
       () => catchAsyncSqfliteError(() {
         checkKeyValueParam(
           keyPath: keyPath,
@@ -397,7 +399,7 @@ class IdbObjectStoreSqflite
   @override
   Future<Object> put(Object value, [Object? key]) {
     value = toSqfliteValue(value);
-    return _checkWritableStore(
+    return checkWritableStore(
       () => catchAsyncSqfliteError(() {
         checkKeyValueParam(
           keyPath: keyPath,
@@ -514,7 +516,7 @@ class IdbObjectStoreSqflite
 
   @override
   Future clear() {
-    return _checkWritableStore(() async {
+    return checkWritableStore(() async {
       await transaction.batch((batch) {
         for (var index in _indecies) {
           batch.delete(index.sqlIndexTableName);
@@ -526,7 +528,7 @@ class IdbObjectStoreSqflite
 
   @override
   Future<void> delete(Object keyOrRange) {
-    return _checkWritableStore(() async {
+    return checkWritableStore(() async {
       await deleteImpl(keyOrRange);
     });
   }
@@ -668,7 +670,7 @@ class IdbObjectStoreSqflite
 
   @override
   Future<void> pagedRowUpdate(Object primaryKey, Object value) =>
-      checkStore(() => putImpl(toSqfliteValue(value), primaryKey));
+      checkWritableStore(() => putImpl(toSqfliteValue(value), primaryKey));
 
   @override
   Future<List<IdbJoinRow>?> joinedRowList({
