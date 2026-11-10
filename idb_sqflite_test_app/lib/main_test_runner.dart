@@ -11,17 +11,17 @@ import 'package:idb_sqflite_common_test/sqflite_transaction_wrapper_test.dart'
     as transaction_wrapper;
 import 'package:idb_test/idb_test_common.dart';
 import 'package:idb_test/test_runner.dart';
-import 'package:sqflite/sqflite.dart' as plugin;
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
 
 /// Test context running the idb_sqflite test suite against the platform
 /// sqflite database factory (ffi on Windows/Linux, the plugin elsewhere).
 class TestRunnerContext extends TestContext {
+  /// The sqflite factory the idb factory runs on.
   final sqflite.DatabaseFactory sqfliteDatabaseFactory;
 
   TestRunnerContext(this.sqfliteDatabaseFactory)
-    : super(factory: getIdbFactorySqflite(plugin.databaseFactorySqflitePlugin));
+    : super(factory: getIdbFactorySqflite(sqfliteDatabaseFactory));
 
   @override
   bool get isInMemory => false;

@@ -12,8 +12,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_ffi/sqflite_ffi.dart' as ffi;
 
-/// Test context running the idb_sqflite test suite against the platform
-/// sqflite database factory (ffi on Windows/Linux, the plugin elsewhere).
+/// Test context running the idb_sqflite test suite on the ffi sqflite
+/// database factory of `sqflite_ffi`, on every platform.
 class TestRunnerContext extends TestContext {
   final sqflite.DatabaseFactory sqfliteDatabaseFactory;
 

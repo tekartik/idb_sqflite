@@ -1,16 +1,48 @@
-# idb_sqflite_test
+# idb_sqflite_test_app
 
-Indexeddb sqflite test
+Flutter test app of [idb_sqflite](../idb_sqflite): it runs the shared
+IndexedDB test suites (`idb_test`, `idb_sqflite_common_test`) on a device,
+and holds two small counter apps.
 
-## Getting Started
+Not published. The shared suites also run on the Dart VM (ffi) in
+[idb_sqflite_common_test](../idb_sqflite_common_test): use this app for a
+device (sqflite plugin) or a desktop app run.
 
-This project is a starting point for a Flutter application.
+## Setup
 
-A few resources to get you started if this is your first Flutter project:
+The platform folders are not committed: create the ones you need first.
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+```shell
+flutter create . --platforms=android,ios,macos,linux,windows
+```
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Run the test suites
+
+The runners are `flutter run` targets: the results are printed in the
+console (`All tests passed!` at the end), there is no exit code.
+
+| Target | sqflite factory | Platforms |
+|---|---|---|
+| `lib/main_test_runner.dart` | the platform one: the plugin on Android, iOS, macOS; ffi on Linux, Windows | all but web |
+| `lib/main_test_runner_ffi.dart` | ffi (`sqflite_ffi`), databases in the application support folder | all but web |
+
+```shell
+flutter run -d emulator-5554 -t lib/main_test_runner.dart
+flutter run -d linux -t lib/main_test_runner_ffi.dart
+```
+
+The same from a menu: `dart run tool/test_menu.dart` (device id in the
+`DEVICE_ID` variable, `emulator-5554` by default), or
+`dart run tool/run_test_runner_linux.dart`.
+
+`flutter test` runs the unit tests of the app (imports, runner context).
+
+## Counter apps
+
+* `lib/main.dart`: the idb API (`idbFactory`: idb_sqflite on io, the
+  browser IndexedDB on the web).
+* `lib/main_sdb.dart`: the sdb API (`sdbFactorySqflite`, `sdbFactoryWeb` on
+  the web).
+
+On Linux and Windows they set `databaseFactory = databaseFactoryFfi` first,
+as an app must (no sqflite plugin there).
