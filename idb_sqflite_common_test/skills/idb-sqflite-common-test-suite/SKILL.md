@@ -36,19 +36,20 @@ every public library exposes a `define...Tests(...)` function you call from the
       git:
         url: https://github.com/tekartik/idb_shim.dart
         path: idb_test
+    idb_sqflite: '>=1.5.3'
     sqflite_common_ffi: '>=2.3.0'
     test:
   ```
-  `idb_sqflite`, `idb_shim` and `sqflite_common` come with it, but declare the
-  ones you import yourself.
+  `idb_sqflite`, `idb_shim` (2.11.3 at least) and `sqflite_common` come with
+  it, but declare the ones you import yourself.
 * Three public libraries, each with one entry point:
   * `package:idb_sqflite_common_test/idb_sqflite_test.dart` →
     `void defineTests(IdbFactory factory)`: sqflite implementation details
     (in memory database, reopen after a transaction, `sqlite_master` tables
     created and dropped for a `multiEntry` index, index table content,
-    parallel multi insert). It re-exports `package:idb_test/idb_test_common.dart`,
-    so it also brings `group`, `test`, `expect`, `testStoreName`,
-    `testNameIndex`, `testNameField`.
+    parallel multi insert). It re-exports nothing: import
+    `package:idb_test/idb_test_common.dart` for `group`, `test`, `expect`,
+    `testStoreName`, `testNameIndex`, `testNameField`.
   * `package:idb_sqflite_common_test/sdb_sqflite_test.dart` →
     `void defineSdbSqfliteTests(SdbFactory factory)`: SDB on sqflite
     (`inMemoryDatabasePath`, opening an absolute path whose parent directory
@@ -56,6 +57,9 @@ every public library exposes a `define...Tests(...)` function you call from the
   * `package:idb_sqflite_common_test/sqflite_transaction_wrapper_test.dart` →
     `void defineTests(sqflite.DatabaseFactory factory)`: takes the *sqflite*
     factory (not an `IdbFactory`) and exercises `SqfliteTransactionWrapper`.
+    Its `setUp` / `tearDown` (open and close `transaction_wrapper.db`) apply
+    to the whole enclosing group: call it inside its own
+    `group('transaction_wrapper', ...)`.
 * Two libraries export a symbol named `defineTests`. Always import them with a
   prefix (`as idb_sqflite_test`, `as transaction_wrapper`) as the package's own
   tests do.
@@ -80,7 +84,8 @@ every public library exposes a `define...Tests(...)` function you call from the
 * Flutter: the same calls work in an `integration_test` on a device, with
   `databaseFactory` from `package:sqflite/sqflite.dart` instead of the ffi one
   and `WidgetsFlutterBinding.ensureInitialized()` first. These suites never run
-  on the web (`idb_sqflite` needs `dart:ffi`/`dart:io`).
+  on the web: idb_sqflite has no web backend (the web uses `idbFactoryNative`)
+  and `sdb_sqflite_test.dart` imports `dart:io`.
 * Databases are created relative to the sqflite databases path
   (`.dart_tool/sqflite_common_ffi/databases` with ffi). Wrap the factory with
   `.sandbox(path: 'sandbox')` to isolate a run; the SDB sandbox type
@@ -93,9 +98,11 @@ every public library exposes a `define...Tests(...)` function you call from the
   `dart_test.yaml`, or in their own sandbox, so two test files do not fight
   over the same files. `parallel_multi_insert` inserts 4000 records and has a
   5 minute timeout: expect a slow file.
-* Run with `dart test -p vm` (add `dart run sqflite_common_ffi:setup` style
-  native setup only if your platform needs it). Do not add these calls to a
-  library file: they must be inside a `main()` of a `_test.dart` file.
+* Run with `dart test -p vm`. On Linux, sqflite_common_ffi needs the sqlite3
+  library (`sudo apt-get install libsqlite3-dev`). Do not add these calls to
+  a library file: they must be inside a `main()` of a `_test.dart` file.
+* idb_shim 2.11.3 at least: the idb_test regression suites check its fixes
+  (with 2.11.2 four sdb regression tests fail).
 
 ## Examples
 
@@ -124,8 +131,11 @@ Future<void> main() async {
     defineAllTests(context);
     // sqflite specific behavior (this package).
     idb_sqflite_test.defineTests(context.factory);
-    // SqfliteTransactionWrapper, on the raw sqflite factory.
-    transaction_wrapper.defineTests(sqfliteFactory);
+    // SqfliteTransactionWrapper, on the raw sqflite factory, in its own
+    // group (its setUp/tearDown would run around every test above).
+    group('transaction_wrapper', () {
+      transaction_wrapper.defineTests(sqfliteFactory);
+    });
   });
 }
 ```
@@ -159,7 +169,7 @@ Future<void> main() async {
 @TestOn('vm')
 library;
 
-import 'package:idb_sqflite/idb_sqflite.dart';
+// sdb_sqflite.dart re-exports the idb_sqflite factory too.
 import 'package:idb_sqflite/sdb_sqflite.dart';
 import 'package:idb_sqflite_common_test/idb_sqflite_test.dart'
     as idb_sqflite_test;
